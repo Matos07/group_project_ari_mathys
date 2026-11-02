@@ -61,13 +61,13 @@ Sprint 1 contracts define exact AC and STS IDs (Status: *Specified*). Later spri
 | NFR-03 | Transaction atomicity (rollback on failure) | SR-01, F-05, F-06 | Sprint 1 | Integration test on row counts | AC-F05-06 / TEST-F05-06 | Specified |
 | NFR-04 | Exact integer satang arithmetic | SR-01 | Sprint 1 | Unit tests on minor unit sums | AC-SR01-01, AC-SR01-03 / TEST-SR01-01, TEST-SR01-03 | Specified |
 | NFR-05 | 8h absolute session lifetime & immediate logout | F-01 | Sprint 1 | API test with mock clock & logout test | AC-F01-06, AC-F01-07 / TEST-F01-06, TEST-F01-07 | Specified |
-| NFR-06 | Setup in <= 5 documented commands | SR-02 | Sprint 1 | Verification on fresh clone | AC-SR02-01 / TEST-SR02-01 | Specified |
-| NFR-07 | Committed data survives app restart | SR-02, F-05, F-06 | Sprint 1 | Integration test across DB reconnect | AC-SR02-05 / TEST-SR02-05 | Specified |
-| NFR-08 | Safe error bodies (no stack trace / SQL) | SR-02 | Sprint 1 | API tests on error responses | AC-SR02-04 / TEST-SR02-04 | Specified |
+| NFR-06 | Setup in <= 5 documented commands | SR-02 | Sprint 1 | Verification on fresh clone | AC-SR02-01 / TEST-SR02-01 | Passed |
+| NFR-07 | Committed data survives app restart | SR-02, F-05, F-06 | Sprint 1 | Integration test across DB reconnect | AC-SR02-05 / TEST-SR02-05 | Passed (SR-02) |
+| NFR-08 | Safe error bodies (no stack trace / SQL) | SR-02 | Sprint 1 | API tests on error responses | AC-SR02-04 / TEST-SR02-04 | Passed |
 | NFR-09 | Ledger domain module >= 80% coverage | SR-01 | Sprint 1 | Coverage report | AC-SR01-10 / TEST-SR01-10 | Specified |
 | NFR-10 | Sprint 1 UI states & responsive at 360px | F-03, F-05, F-06, F-07, HR-01 | Sprint 1 | UI / E2E viewport tests | AC-F03-05 / TEST-F03-05 | Specified |
 | NFR-11 | < 500ms p95 on 5k transactions | F-07, F-16, HR-01 | Sprint 3 | Benchmark script | Sprint 3 contract | Planned |
-| NFR-12 | Environment variables in .env.example | SR-02 | Sprint 1 | Secret scan + repo audit | AC-SR02-02 / TEST-SR02-02 | Specified |
+| NFR-12 | Environment variables in .env.example | SR-02 | Sprint 1 | Secret scan + repo audit | AC-SR02-02 / TEST-SR02-02 | Passed |
 | NFR-13 | Cash overdraft concurrency protection | SR-01, F-06 | Sprint 2 | Concurrency test | Sprint 2 contract | Planned |
 
 ---

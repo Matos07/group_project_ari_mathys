@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+!.env.example
+
+# Build output
+dist/
+
+# SQLite databases
+*.db
+*.db-journal
+
+# Coverage reports
+coverage/
+
+# IDE / OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
