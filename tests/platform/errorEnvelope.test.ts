@@ -20,9 +20,10 @@ describe('TEST-SR02-04: Error Envelope Hygiene & Formatting', () => {
   });
 
   it('should return standardized 500 envelope without leaking stack traces or internals on unhandled exception', async () => {
-    const app = createApp();
-    app.get('/api/test-crash', () => {
-      throw new Error('Database connection failed: SELECT * FROM users at C:\\server\\secret.ts');
+    const app = createApp((router) => {
+      router.get('/api/test-crash', () => {
+        throw new Error('Database connection failed: SELECT * FROM users at C:\\server\\secret.ts');
+      });
     });
 
     const res = await request(app).get('/api/test-crash');
@@ -41,11 +42,12 @@ describe('TEST-SR02-04: Error Envelope Hygiene & Formatting', () => {
   });
 
   it('should format domain/application errors with custom code, message and optional details', async () => {
-    const app = createApp();
-    app.get('/api/test-app-error', () => {
-      throw new AppError(422, 'OVERDRAFT_DISALLOWED', 'Cash account balance cannot become negative', {
-        accountId: 'acc-123',
-        attemptedMinor: 5000
+    const app = createApp((router) => {
+      router.get('/api/test-app-error', () => {
+        throw new AppError(422, 'OVERDRAFT_DISALLOWED', 'Cash account balance cannot become negative', {
+          accountId: 'acc-123',
+          attemptedMinor: 5000
+        });
       });
     });
 
