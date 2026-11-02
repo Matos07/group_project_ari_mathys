@@ -57,7 +57,7 @@ Sprint 1 contracts define exact AC and STS IDs (Status: *Specified*). Later spri
 | BR-20 | Favorites private, duplication creates draft | F-15 | Sprint 3 | API test | Sprint 3 contract | Planned |
 | BR-21 | Generic error message on failed login | F-01 | Sprint 1 | API test | AC-F01-02, AC-F01-03 / TEST-F01-02, TEST-F01-03 | Specified |
 | NFR-01 | 401 unauthenticated on all protected routes | F-01 | Sprint 1 | API test suite iterating protected routes | AC-F01-08 / TEST-F01-08 | Specified |
-| NFR-02 | Bcrypt cost 12, no plaintext passwords | F-01 | Sprint 1 | Integration test on stored hash + code review | AC-SR02-03 / TEST-SR02-03 | Specified |
+| NFR-02 | Bcrypt cost 12, no plaintext passwords | F-01 | Sprint 1 | Integration test on stored hash + code review | AC-SR02-03 / TEST-SR02-03 | Passed (SR-02) |
 | NFR-03 | Transaction atomicity (rollback on failure) | SR-01, F-05, F-06 | Sprint 1 | Integration test on row counts | AC-F05-06 / TEST-F05-06 | Specified |
 | NFR-04 | Exact integer satang arithmetic | SR-01 | Sprint 1 | Unit tests on minor unit sums | AC-SR01-01, AC-SR01-03 / TEST-SR01-01, TEST-SR01-03 | Specified |
 | NFR-05 | 8h absolute session lifetime & immediate logout | F-01 | Sprint 1 | API test with mock clock & logout test | AC-F01-06, AC-F01-07 / TEST-F01-06, TEST-F01-07 | Specified |
