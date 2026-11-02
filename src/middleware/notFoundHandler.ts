@@ -8,3 +8,4 @@ export const notFoundHandler: RequestHandler = (_req, res) => {
     }
   });
 };
+

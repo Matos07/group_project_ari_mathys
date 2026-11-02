@@ -36,3 +36,4 @@ describe('TEST-SR02-05: Persistent Storage Durability', () => {
     await client2.$disconnect();
   });
 });
+

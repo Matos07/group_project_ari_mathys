@@ -9,3 +9,4 @@ export const config = {
   sessionSecret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-prod',
   seedPassword: process.env.SEED_PASSWORD || ''
 };
+
