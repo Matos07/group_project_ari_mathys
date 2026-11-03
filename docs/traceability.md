@@ -7,10 +7,10 @@ Sprint 1 contracts define exact AC and STS IDs (Status: *Specified*). Later spri
 
 | Requirement | Summary | Feature / responsibility | Sprint | Planned verification | AC / TEST | Status |
 |---|---|---|---|---|---|---|
-| FR-01 | Active user login with session cookie | F-01 | Sprint 1 | API integration test (valid/invalid credentials) | AC-F01-01..04 / TEST-F01-01..04 | Specified |
-| FR-02 | Logged-in user logout with server revocation | F-01 | Sprint 1 | API integration test (cookie reuse after logout) | AC-F01-06 / TEST-F01-06 | Specified |
-| FR-03 | Retrieve current user identity | F-01 | Sprint 1 | API integration test | AC-F01-05 / TEST-F01-05 | Specified |
-| FR-04 | Backend RBAC enforcement from session | F-01 | Sprint 1 | API tests (unauthenticated, forbidden role) | AC-F01-08, AC-F01-09 / TEST-F01-08, TEST-F01-09 | Specified |
+| FR-01 | Active user login with session cookie | F-01 | Sprint 1 | API integration test (valid/invalid credentials) | AC-F01-01..04 / TEST-F01-01..04 | Passed (F-01) |
+| FR-02 | Logged-in user logout with server revocation | F-01 | Sprint 1 | API integration test (cookie reuse after logout) | AC-F01-06 / TEST-F01-06 | Passed (F-01) |
+| FR-03 | Retrieve current user identity | F-01 | Sprint 1 | API integration test | AC-F01-05 / TEST-F01-05 | Passed (F-01) |
+| FR-04 | Backend RBAC enforcement from session | F-01 | Sprint 1 | API tests (unauthenticated, forbidden role) | AC-F01-08, AC-F01-09 / TEST-F01-08, TEST-F01-09 | Passed (F-01) |
 | FR-05 | Admin lists users without financial data | F-02 | Sprint 1 | API test + E2E journey | AC-F02-01 / TEST-F02-01 | Specified |
 | FR-06 | Admin enables or disables user account | F-02 | Sprint 1 | API test + E2E journey | AC-F02-03, AC-F02-04 / TEST-F02-03, TEST-F02-04 | Specified |
 | FR-07 | User views cash/bank accounts with balances | F-03 | Sprint 1 | API integration test + UI test | AC-F03-01, AC-F03-02 / TEST-F03-01, TEST-F03-02 | Specified |
@@ -55,12 +55,12 @@ Sprint 1 contracts define exact AC and STS IDs (Status: *Specified*). Later spri
 | BR-18 | Administrator cannot disable self or last admin | F-02 | Sprint 1 | API test | AC-F02-05, AC-F02-06 / TEST-F02-05, TEST-F02-06 | Specified |
 | BR-19 | Transactions immutable in Sprint 1 | F-05, F-06, F-12 | Sprint 1 | API test (no PUT/DELETE endpoints) | AC-F05-01, AC-F06-01 / TEST-F05-01, TEST-F06-01 | Specified |
 | BR-20 | Favorites private, duplication creates draft | F-15 | Sprint 3 | API test | Sprint 3 contract | Planned |
-| BR-21 | Generic error message on failed login | F-01 | Sprint 1 | API test | AC-F01-02, AC-F01-03 / TEST-F01-02, TEST-F01-03 | Specified |
-| NFR-01 | 401 unauthenticated on all protected routes | F-01 | Sprint 1 | API test suite iterating protected routes | AC-F01-08 / TEST-F01-08 | Specified |
+| BR-21 | Generic error message on failed login | F-01 | Sprint 1 | API test | AC-F01-02, AC-F01-03 / TEST-F01-02, TEST-F01-03 | Passed (F-01) |
+| NFR-01 | 401 unauthenticated on all protected routes | F-01 | Sprint 1 | API test suite iterating protected routes | AC-F01-08 / TEST-F01-08 | Passed (F-01) |
 | NFR-02 | Bcrypt cost 12, no plaintext passwords | F-01 | Sprint 1 | Integration test on stored hash + code review | AC-SR02-03 / TEST-SR02-03 | Passed (SR-02) |
 | NFR-03 | Transaction atomicity (rollback on failure) | SR-01, F-05, F-06 | Sprint 1 | Integration test on row counts | AC-F05-06 / TEST-F05-06 | Specified |
 | NFR-04 | Exact integer satang arithmetic | SR-01 | Sprint 1 | Unit tests on minor unit sums | AC-SR01-01, AC-SR01-03 / TEST-SR01-01, TEST-SR01-03 | Passed (SR-01) |
-| NFR-05 | 8h absolute session lifetime & immediate logout | F-01 | Sprint 1 | API test with mock clock & logout test | AC-F01-06, AC-F01-07 / TEST-F01-06, TEST-F01-07 | Specified |
+| NFR-05 | 8h absolute session lifetime & immediate logout | F-01 | Sprint 1 | API test with mock clock & logout test | AC-F01-06, AC-F01-07 / TEST-F01-06, TEST-F01-07 | Passed (F-01) |
 | NFR-06 | Setup in <= 5 documented commands | SR-02 | Sprint 1 | Verification on fresh clone | AC-SR02-01 / TEST-SR02-01 | Passed |
 | NFR-07 | Committed data survives app restart | SR-02, F-05, F-06 | Sprint 1 | Integration test across DB reconnect | AC-SR02-05 / TEST-SR02-05 | Passed (SR-02) |
 | NFR-08 | Safe error bodies (no stack trace / SQL) | SR-02 | Sprint 1 | API tests on error responses | AC-SR02-04 / TEST-SR02-04 | Passed |
