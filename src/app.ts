@@ -5,7 +5,9 @@ import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './routes/auth.js';
 import { adminRouter } from './routes/admin.js';
+import { accountsRouter } from './routes/accounts.js';
 import { adminUsersHtml } from './views/adminUsersHtml.js';
+import { overviewHtml } from './views/overviewHtml.js';
 
 export function createApp(configureRoutes?: (app: Express) => void): Express {
   const app = express();
@@ -24,10 +26,19 @@ export function createApp(configureRoutes?: (app: Express) => void): Express {
   // Administrator user management endpoints (F-02)
   app.use('/api/admin', adminRouter);
 
+  // Financial accounts & overview endpoints (F-03)
+  app.use('/api/accounts', accountsRouter);
+
   // Administrator Dashboard UI (F-02, NFR-10)
   app.get('/admin/users', (_req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.send(adminUsersHtml);
+  });
+
+  // User Account Overview UI (F-03, NFR-10)
+  app.get('/overview', (_req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.send(overviewHtml);
   });
 
   if (configureRoutes) {

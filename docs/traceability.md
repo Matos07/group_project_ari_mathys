@@ -13,8 +13,8 @@ Sprint 1 contracts define exact AC and STS IDs (Status: *Specified*). Later spri
 | FR-04 | Backend RBAC enforcement from session | F-01 | Sprint 1 | API tests (unauthenticated, forbidden role) | AC-F01-08, AC-F01-09 / TEST-F01-08, TEST-F01-09 | Passed (F-01) |
 | FR-05 | Admin lists users without financial data | F-02 | Sprint 1 | API test + E2E journey | AC-F02-01 / TEST-F02-01 | Passed (F-02) |
 | FR-06 | Admin enables or disables user account | F-02 | Sprint 1 | API test + E2E journey | AC-F02-03, AC-F02-04 / TEST-F02-03, TEST-F02-04 | Passed (F-02) |
-| FR-07 | User views cash/bank accounts with balances | F-03 | Sprint 1 | API integration test + UI test | AC-F03-01, AC-F03-02 / TEST-F03-01, TEST-F03-02 | Specified |
-| FR-08 | User views loans taken and receivables | F-03 | Sprint 1 | API integration test + UI test | AC-F03-03 / TEST-F03-03 | Specified |
+| FR-07 | User views cash/bank accounts with balances | F-03 | Sprint 1 | API integration test + UI test | AC-F03-01, AC-F03-02 / TEST-F03-01, TEST-F03-02 | Passed (F-03) |
+| FR-08 | User views loans taken and receivables | F-03 | Sprint 1 | API integration test + UI test | AC-F03-03 / TEST-F03-03 | Passed (F-03) |
 | FR-09 | User creates account across 5 types | F-08 | Sprint 2 | API test + E2E journey | Sprint 2 contract | Planned |
 | FR-10 | User renames or archives account | F-08 | Sprint 2 | API test | Sprint 2 contract | Planned |
 | FR-11 | Record dated opening balance | F-04 | Sprint 1 | API integration test + UI test | AC-F04-01 / TEST-F04-01 | Specified |
@@ -40,16 +40,16 @@ Sprint 1 contracts define exact AC and STS IDs (Status: *Specified*). Later spri
 | BR-03 | Allocation target matrix per form kind | F-05, F-06, SR-01 | Sprint 1 | Unit test over full matrix; API tests | AC-SR01-06 / TEST-SR01-06 | Specified |
 | BR-04 | Target account cannot equal main account | F-05, F-06 | Sprint 1 | Unit + API test | AC-SR01-05, AC-F06-06 / TEST-SR01-05, TEST-F06-06 | Specified |
 | BR-05 | Income/expense strictly from Income/Expense lines | F-07, SR-01 | Sprint 1 | Unit test (summary) + API test | AC-SR01-09, AC-F07-03, AC-F07-04, AC-F07-05 / TEST-SR01-09, TEST-F07-03, TEST-F07-04, TEST-F07-05 | Specified |
-| BR-06 | Balances derived per effect table | F-03, SR-01 | Sprint 1 | Unit tests per cell + integration test | AC-SR01-01, AC-F03-02, AC-F03-03 / TEST-SR01-01, TEST-F03-02, TEST-F03-03 | Specified |
+| BR-06 | Balances derived per effect table | F-03, SR-01 | Sprint 1 | Unit tests per cell + integration test | AC-SR01-01, AC-F03-02, AC-F03-03 / TEST-SR01-01, TEST-F03-02, TEST-F03-03 | Passed (F-03, SR-01) |
 | BR-07 | Cash account cannot become negative | F-06, SR-01 | Sprint 1 | Unit + API test | AC-SR01-07, AC-F06-03 / TEST-SR01-07, TEST-F06-03 | Specified |
 | BR-08 | Loan repayment cannot exceed debt | F-06, SR-01 | Sprint 1 | Unit + API test | AC-SR01-08, AC-F06-04 / TEST-SR01-08, TEST-F06-04 | Specified |
 | BR-09 | Date in Asia/Bangkok, not in future | F-05, F-06 | Sprint 1 | API boundary test (today pass, tomorrow fail) | AC-F05-04, AC-F06-07 / TEST-F05-04, TEST-F06-07 | Specified |
-| BR-10 | Strict user isolation (404 on foreign data) | F-01, F-03, F-07 | Sprint 1 | API tests (user A requests user B records) | AC-F01-10, AC-F03-04, AC-F07-06 / TEST-F01-10, TEST-F03-04, TEST-F07-06 | Specified |
+| BR-10 | Strict user isolation (404 on foreign data) | F-01, F-03, F-07 | Sprint 1 | API tests (user A requests user B records) | AC-F01-10, AC-F03-04, AC-F07-06 / TEST-F01-10, TEST-F03-04, TEST-F07-06 | Passed (F-01, F-03) |
 | BR-11 | Accounts must belong to owner and be active | F-05, F-06 | Sprint 1 | API test (foreign account ID rejected) | AC-F05-05 / TEST-F05-05 | Specified |
 | BR-12 | Opening balance only Cash/Loans, <= 1 in S1 | F-04 | Sprint 1 | API test | AC-F04-01..03 / TEST-F04-01..03 | Specified |
-| BR-13 | Account type fixed at creation | F-03, F-08 | Sprint 1 | Unit + API test | AC-F03-01 / TEST-F03-01 | Specified |
-| BR-14 | Account names unique per user (case-insensitive) | F-03, F-08 | Sprint 1 | Database constraint test | AC-SR02-03 / TEST-SR02-03 | Specified |
-| BR-15 | Single currency (THB satang) | F-03, SR-02 | Sprint 1 | Schema & API review | AC-SR01-01, AC-SR02-01 / TEST-SR01-01, TEST-SR02-01 | Specified |
+| BR-13 | Account type fixed at creation | F-03, F-08 | Sprint 1 | Unit + API test | AC-F03-01 / TEST-F03-01 | Passed (F-03) |
+| BR-14 | Account names unique per user (case-insensitive) | F-03, F-08 | Sprint 1 | Database constraint test | AC-SR02-03 / TEST-SR02-03 | Passed (F-03, SR-02) |
+| BR-15 | Single currency (THB satang) | F-03, SR-02 | Sprint 1 | Schema & API review | AC-SR01-01, AC-SR02-01 / TEST-SR01-01, TEST-SR02-01 | Passed (F-03, SR-02) |
 | BR-16 | Administrator holds no financial accounts | F-01, F-02 | Sprint 1 | API test (admin calls financial routes -> 403) | AC-F01-09, AC-F02-01 / TEST-F01-09, TEST-F02-01 | Passed (F-01, F-02) |
 | BR-17 | Disabled user session revocation & blocked login | F-01, F-02 | Sprint 1 | API test | AC-F01-04, AC-F02-04 / TEST-F01-04, TEST-F02-04 | Passed (F-01, F-02) |
 | BR-18 | Administrator cannot disable self or last admin | F-02 | Sprint 1 | API test | AC-F02-05, AC-F02-06 / TEST-F02-05, TEST-F02-06 | Passed (F-02) |
@@ -65,7 +65,7 @@ Sprint 1 contracts define exact AC and STS IDs (Status: *Specified*). Later spri
 | NFR-07 | Committed data survives app restart | SR-02, F-05, F-06 | Sprint 1 | Integration test across DB reconnect | AC-SR02-05 / TEST-SR02-05 | Passed (SR-02) |
 | NFR-08 | Safe error bodies (no stack trace / SQL) | SR-02 | Sprint 1 | API tests on error responses | AC-SR02-04 / TEST-SR02-04 | Passed |
 | NFR-09 | Ledger domain module >= 80% coverage | SR-01 | Sprint 1 | Coverage report | AC-SR01-10 / TEST-SR01-10 | Passed (SR-01) |
-| NFR-10 | Sprint 1 UI states & responsive at 360px | F-03, F-05, F-06, F-07, HR-01 | Sprint 1 | UI / E2E viewport tests | AC-F03-05 / TEST-F03-05 | Specified |
+| NFR-10 | Sprint 1 UI states & responsive at 360px | F-03, F-05, F-06, F-07, HR-01 | Sprint 1 | UI / E2E viewport tests | AC-F03-05 / TEST-F03-05 | Passed (F-03) |
 | NFR-11 | < 500ms p95 on 5k transactions | F-07, F-16, HR-01 | Sprint 3 | Benchmark script | Sprint 3 contract | Planned |
 | NFR-12 | Environment variables in .env.example | SR-02 | Sprint 1 | Secret scan + repo audit | AC-SR02-02 / TEST-SR02-02 | Passed |
 | NFR-13 | Cash overdraft concurrency protection | SR-01, F-06 | Sprint 2 | Concurrency test | Sprint 2 contract | Planned |
