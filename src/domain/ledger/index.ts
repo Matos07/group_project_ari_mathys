@@ -416,3 +416,4 @@ export function calculateIncomeExpenseSummary(
     netMinor: incomeMinor - expenseMinor
   };
 }
+
