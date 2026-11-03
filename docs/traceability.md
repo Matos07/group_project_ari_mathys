@@ -11,8 +11,8 @@ Sprint 1 contracts define exact AC and STS IDs (Status: *Specified*). Later spri
 | FR-02 | Logged-in user logout with server revocation | F-01 | Sprint 1 | API integration test (cookie reuse after logout) | AC-F01-06 / TEST-F01-06 | Passed (F-01) |
 | FR-03 | Retrieve current user identity | F-01 | Sprint 1 | API integration test | AC-F01-05 / TEST-F01-05 | Passed (F-01) |
 | FR-04 | Backend RBAC enforcement from session | F-01 | Sprint 1 | API tests (unauthenticated, forbidden role) | AC-F01-08, AC-F01-09 / TEST-F01-08, TEST-F01-09 | Passed (F-01) |
-| FR-05 | Admin lists users without financial data | F-02 | Sprint 1 | API test + E2E journey | AC-F02-01 / TEST-F02-01 | Specified |
-| FR-06 | Admin enables or disables user account | F-02 | Sprint 1 | API test + E2E journey | AC-F02-03, AC-F02-04 / TEST-F02-03, TEST-F02-04 | Specified |
+| FR-05 | Admin lists users without financial data | F-02 | Sprint 1 | API test + E2E journey | AC-F02-01 / TEST-F02-01 | Passed (F-02) |
+| FR-06 | Admin enables or disables user account | F-02 | Sprint 1 | API test + E2E journey | AC-F02-03, AC-F02-04 / TEST-F02-03, TEST-F02-04 | Passed (F-02) |
 | FR-07 | User views cash/bank accounts with balances | F-03 | Sprint 1 | API integration test + UI test | AC-F03-01, AC-F03-02 / TEST-F03-01, TEST-F03-02 | Specified |
 | FR-08 | User views loans taken and receivables | F-03 | Sprint 1 | API integration test + UI test | AC-F03-03 / TEST-F03-03 | Specified |
 | FR-09 | User creates account across 5 types | F-08 | Sprint 2 | API test + E2E journey | Sprint 2 contract | Planned |
@@ -50,9 +50,9 @@ Sprint 1 contracts define exact AC and STS IDs (Status: *Specified*). Later spri
 | BR-13 | Account type fixed at creation | F-03, F-08 | Sprint 1 | Unit + API test | AC-F03-01 / TEST-F03-01 | Specified |
 | BR-14 | Account names unique per user (case-insensitive) | F-03, F-08 | Sprint 1 | Database constraint test | AC-SR02-03 / TEST-SR02-03 | Specified |
 | BR-15 | Single currency (THB satang) | F-03, SR-02 | Sprint 1 | Schema & API review | AC-SR01-01, AC-SR02-01 / TEST-SR01-01, TEST-SR02-01 | Specified |
-| BR-16 | Administrator holds no financial accounts | F-01, F-02 | Sprint 1 | API test (admin calls financial routes -> 403) | AC-F01-09, AC-F02-01 / TEST-F01-09, TEST-F02-01 | Specified |
-| BR-17 | Disabled user session revocation & blocked login | F-01, F-02 | Sprint 1 | API test | AC-F01-04, AC-F02-04 / TEST-F01-04, TEST-F02-04 | Specified |
-| BR-18 | Administrator cannot disable self or last admin | F-02 | Sprint 1 | API test | AC-F02-05, AC-F02-06 / TEST-F02-05, TEST-F02-06 | Specified |
+| BR-16 | Administrator holds no financial accounts | F-01, F-02 | Sprint 1 | API test (admin calls financial routes -> 403) | AC-F01-09, AC-F02-01 / TEST-F01-09, TEST-F02-01 | Passed (F-01, F-02) |
+| BR-17 | Disabled user session revocation & blocked login | F-01, F-02 | Sprint 1 | API test | AC-F01-04, AC-F02-04 / TEST-F01-04, TEST-F02-04 | Passed (F-01, F-02) |
+| BR-18 | Administrator cannot disable self or last admin | F-02 | Sprint 1 | API test | AC-F02-05, AC-F02-06 / TEST-F02-05, TEST-F02-06 | Passed (F-02) |
 | BR-19 | Transactions immutable in Sprint 1 | F-05, F-06, F-12 | Sprint 1 | API test (no PUT/DELETE endpoints) | AC-F05-01, AC-F06-01 / TEST-F05-01, TEST-F06-01 | Specified |
 | BR-20 | Favorites private, duplication creates draft | F-15 | Sprint 3 | API test | Sprint 3 contract | Planned |
 | BR-21 | Generic error message on failed login | F-01 | Sprint 1 | API test | AC-F01-02, AC-F01-03 / TEST-F01-02, TEST-F01-03 | Passed (F-01) |
