@@ -79,12 +79,19 @@ accountsRouter.get('/', async (req: Request, res: Response, next: NextFunction):
     // 4. Derive balances using pure domain engine (BR-06, D-07, D-09)
     const derivedBalances = deriveBalances(accountStates, recordedTransactions);
 
+    const openingBalanceAccountIds = new Set(
+      transactions
+        .filter((t) => t.kind === 'OPENING_BALANCE')
+        .map((t) => t.mainAccountId)
+    );
+
     let totalCashMinor = 0;
     let totalDebtMinor = 0;
     let totalReceivableMinor = 0;
 
     const formattedAccounts = accounts.map((acc) => {
       const balanceMinor = derivedBalances.get(acc.id) ?? 0;
+      const hasOpeningBalance = openingBalanceAccountIds.has(acc.id);
 
       if (acc.type === 'CASH') {
         totalCashMinor += balanceMinor;
@@ -100,7 +107,8 @@ accountsRouter.get('/', async (req: Request, res: Response, next: NextFunction):
         type: acc.type,
         subtype: acc.subtype,
         balanceMinor,
-        balanceFormatted: formatSatang(balanceMinor)
+        balanceFormatted: formatSatang(balanceMinor),
+        hasOpeningBalance
       };
     });
 
@@ -119,4 +127,3 @@ accountsRouter.get('/', async (req: Request, res: Response, next: NextFunction):
     next(error);
   }
 });
-
