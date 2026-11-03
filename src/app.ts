@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import { config } from './config/env.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { authRouter } from './routes/auth.js';
 
 export function createApp(configureRoutes?: (app: Express) => void): Express {
   const app = express();
@@ -14,6 +15,9 @@ export function createApp(configureRoutes?: (app: Express) => void): Express {
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  // Authentication & session management endpoints (F-01)
+  app.use('/api/auth', authRouter);
 
   if (configureRoutes) {
     configureRoutes(app);
