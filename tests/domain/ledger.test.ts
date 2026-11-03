@@ -135,6 +135,19 @@ describe('SR-01 Ledger Domain Engine', () => {
       const result = validateTransaction(input);
       expect(result.valid).toBe(false);
       expect(result.errorCode).toBe('AMOUNT_EXCEEDS_MAX');
+
+      // Allocation line exceeding max ceiling
+      const lineExceedsMax: ValidateTransactionInput = {
+        kind: 'PAYMENT',
+        mainAccountId: 'cash-1',
+        mainAccountType: 'CASH',
+        totalMinor: 1000000000,
+        allocations: [{ targetAccountId: 'exp-1', targetAccountType: 'EXPENSE', amountMinor: 1000000001 }],
+        currentAccountBalances: new Map([['cash-1', 2000000000]])
+      };
+      const lineRes = validateTransaction(lineExceedsMax);
+      expect(lineRes.valid).toBe(false);
+      expect(lineRes.errorCode).toBe('AMOUNT_EXCEEDS_MAX');
     });
 
     it('TEST-SR01-04b / AC-SR01-04: Exactly at transaction ceiling is allowed', () => {
@@ -325,6 +338,18 @@ describe('SR-01 Ledger Domain Engine', () => {
         currentAccountBalances: new Map()
       };
       expect(validateTransaction(validOpening)).toEqual({ valid: true });
+
+      const invalidAccountType: ValidateTransactionInput = {
+        kind: 'OPENING_BALANCE',
+        mainAccountId: 'inc-1',
+        mainAccountType: 'INCOME' as any,
+        totalMinor: 5000000,
+        allocations: [],
+        currentAccountBalances: new Map()
+      };
+      const invalidAccRes = validateTransaction(invalidAccountType);
+      expect(invalidAccRes.valid).toBe(false);
+      expect(invalidAccRes.errorCode).toBe('INVALID_MAIN_ACCOUNT_TYPE');
 
       const openingWithLines: ValidateTransactionInput = {
         kind: 'OPENING_BALANCE',
@@ -622,6 +647,53 @@ describe('SR-01 Ledger Domain Engine', () => {
         incomeMinor: 3000000,
         expenseMinor: 50000,
         netMinor: 2950000
+      });
+    });
+
+    it('should resolve account types from passed accounts array or map if lines omit types', () => {
+      const transactions: RecordedTransaction[] = [
+        {
+          id: 'tx-1',
+          kind: 'RECEIPT',
+          mainAccountId: 'bank-1',
+          totalMinor: 100000,
+          transactionDate: '2026-10-05',
+          allocations: [
+            { targetAccountId: 'inc-1', amountMinor: 100000 }
+          ]
+        },
+        {
+          id: 'tx-2',
+          kind: 'PAYMENT',
+          mainAccountId: 'bank-1',
+          totalMinor: 40000,
+          transactionDate: '2026-10-10',
+          allocations: [
+            { targetAccountId: 'exp-1', amountMinor: 40000 }
+          ]
+        }
+      ];
+
+      const accountsArray: AccountState[] = [
+        { id: 'inc-1', type: 'INCOME' },
+        { id: 'exp-1', type: 'EXPENSE' }
+      ];
+      const summaryWithArray = calculateIncomeExpenseSummary(transactions, undefined, undefined, accountsArray);
+      expect(summaryWithArray).toEqual({
+        incomeMinor: 100000,
+        expenseMinor: 40000,
+        netMinor: 60000
+      });
+
+      const accountsMap = new Map<string, any>([
+        ['inc-1', 'INCOME'],
+        ['exp-1', 'EXPENSE']
+      ]);
+      const summaryWithMap = calculateIncomeExpenseSummary(transactions, undefined, undefined, accountsMap);
+      expect(summaryWithMap).toEqual({
+        incomeMinor: 100000,
+        expenseMinor: 40000,
+        netMinor: 60000
       });
     });
   });
