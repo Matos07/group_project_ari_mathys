@@ -1,7 +1,7 @@
 # Software Requirements Specification - Personal Money and Expense Logging System
 
 **Course:** CPE 334, Semester 1/2026 | **Theme:** 7 - Personal Money and Expense Logging System
-**Team:** [Student 1 - ID] and [Student 2 - ID] | **Repository:** [URL]
+**Team:** Ari CLEMENT--KOKKONEN - 69540460006 and Mathys PORTERAT - 69650460017 | **Repository:** : https://github.com/Matos07/group_project_ari_mathys
 **Document version:** v0.1 (baseline) - 2026-10-23
 **Related documents:** `docs/decisions.md`, `docs/features.md`, `docs/traceability.md`, `docs/sprints/plan.md`
 
