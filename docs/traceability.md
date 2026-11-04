@@ -26,7 +26,7 @@ This matrix maps every functional requirement (FR), business rule (BR), non-func
 | FR-10 | User renames or archives account | F-08 | Sprint 2 | API test | Sprint 2 contract | Planned |
 | FR-11 | Record dated opening balance | F-04 | Sprint 1 | API integration test + UI test | AC-F04-01 / TEST-F04-01 | Passed (F-04) |
 | FR-12 | Modify existing opening balance with audit | F-13 | Sprint 3 | API test | Sprint 3 contract | Planned |
-| FR-13 | Record 'Receive money' with income allocations | F-05 | Sprint 1 | API integration test + E2E journey | AC-F05-01, AC-F05-02 / TEST-F05-01, TEST-F05-02 | Specified |
+| FR-13 | Record 'Receive money' with income allocations | F-05 | Sprint 1 | API integration test + E2E journey | AC-F05-01, AC-F05-02 / TEST-F05-01, TEST-F05-02 | Passed (F-05) |
 | FR-14 | Record payment/charge with expense allocations | F-06 | Sprint 1 | API integration test + E2E journey | AC-F06-01 / TEST-F06-01 | Specified |
 | FR-15 | Allocate payment to repay loan taken | F-06 | Sprint 1 | API integration test | AC-F06-02 / TEST-F06-02 | Specified |
 | FR-16 | Allocate payment to new loan given | F-09 | Sprint 2 | API integration test | Sprint 2 contract | Planned |
@@ -49,17 +49,17 @@ This matrix maps every functional requirement (FR), business rule (BR), non-func
 
 | Rule ID | Rule Statement | Enforcing Features | Sprint | Verification Method | Contract & Test Reference | Status |
 |---|---|---|---|---|---|---|
-| BR-01 | Line sum equals transaction total exactly | F-05, F-06, SR-01 | Sprint 1 | Unit + API test (sum mismatch rejected) | AC-SR01-01, AC-SR01-02, AC-F05-03, AC-F06-05 / TEST-SR01-01, TEST-SR01-02, TEST-F05-03, TEST-F06-05 | Specified |
+| BR-01 | Line sum equals transaction total exactly | F-05, F-06, SR-01 | Sprint 1 | Unit + API test (sum mismatch rejected) | AC-SR01-01, AC-SR01-02, AC-F05-03, AC-F06-05 / TEST-SR01-01, TEST-SR01-02, TEST-F05-03, TEST-F06-05 | Passed (F-05, SR-01) |
 | BR-02 | Positive integer minor units (satang); max cap | F-04, F-05, F-06, SR-01 | Sprint 1 | Unit + API boundary tests (0, max, negative) | AC-SR01-03, AC-SR01-04, AC-F04-04 / TEST-SR01-03, TEST-SR01-04, TEST-F04-04 | Passed (F-04, SR-01) |
-| BR-03 | Allocation target matrix per form kind | F-05, F-06, SR-01 | Sprint 1 | Unit test over full matrix; API tests | AC-SR01-06 / TEST-SR01-06 | Specified |
-| BR-04 | Target account cannot equal main account | F-05, F-06 | Sprint 1 | Unit + API test | AC-SR01-05, AC-F06-06 / TEST-SR01-05, TEST-F06-06 | Specified |
+| BR-03 | Allocation target matrix per form kind | F-05, F-06, SR-01 | Sprint 1 | Unit test over full matrix; API tests | AC-SR01-06 / TEST-SR01-06 | Passed (F-05, SR-01) |
+| BR-04 | Target account cannot equal main account | F-05, F-06 | Sprint 1 | Unit + API test | AC-SR01-05, AC-F06-06 / TEST-SR01-05, TEST-F06-06 | Passed (F-05, SR-01) |
 | BR-05 | Income/expense strictly from Income/Expense lines | F-07, SR-01 | Sprint 1 | Unit test (summary) + API test | AC-SR01-09, AC-F07-03, AC-F07-04, AC-F07-05 / TEST-SR01-09, TEST-F07-03, TEST-F07-04, TEST-F07-05 | Specified |
 | BR-06 | Balances derived per effect table | F-03, SR-01 | Sprint 1 | Unit tests per cell + integration test | AC-SR01-01, AC-F03-02, AC-F03-03 / TEST-SR01-01, TEST-F03-02, TEST-F03-03 | Passed (F-03, SR-01) |
 | BR-07 | Cash account cannot become negative | F-06, SR-01 | Sprint 1 | Unit + API test | AC-SR01-07, AC-F06-03 / TEST-SR01-07, TEST-F06-03 | Specified |
 | BR-08 | Loan repayment cannot exceed debt | F-06, SR-01 | Sprint 1 | Unit + API test | AC-SR01-08, AC-F06-04 / TEST-SR01-08, TEST-F06-04 | Specified |
-| BR-09 | Date in Asia/Bangkok, not in future | F-05, F-06 | Sprint 1 | API boundary test (today pass, tomorrow fail) | AC-F05-04, AC-F06-07 / TEST-F05-04, TEST-F06-07 | Specified |
+| BR-09 | Date in Asia/Bangkok, not in future | F-05, F-06 | Sprint 1 | API boundary test (today pass, tomorrow fail) | AC-F05-04, AC-F06-07 / TEST-F05-04, TEST-F06-07 | Passed (F-05) |
 | BR-10 | Strict user isolation (404 on foreign data) | F-01, F-03, F-07 | Sprint 1 | API tests (user A requests user B records) | AC-F01-10, AC-F03-04, AC-F07-06 / TEST-F01-10, TEST-F03-04, TEST-F07-06 | Passed (F-01, F-03) |
-| BR-11 | Accounts must belong to owner and be active | F-05, F-06 | Sprint 1 | API test (foreign account ID rejected) | AC-F05-05 / TEST-F05-05 | Specified |
+| BR-11 | Accounts must belong to owner and be active | F-05, F-06 | Sprint 1 | API test (foreign account ID rejected) | AC-F05-05 / TEST-F05-05 | Passed (F-05) |
 | BR-12 | Opening balance only Cash/Loans, <= 1 in S1 | F-04 | Sprint 1 | API test | AC-F04-01..03 / TEST-F04-01..03 | Passed (F-04) |
 | BR-13 | Account type fixed at creation | F-03, F-08 | Sprint 1 | Unit + API test | AC-F03-01 / TEST-F03-01 | Passed (F-03) |
 | BR-14 | Account names unique per user (case-insensitive) | F-03, F-08 | Sprint 1 | Database constraint test | AC-SR02-03 / TEST-SR02-03 | Passed (F-03, SR-02) |
@@ -83,7 +83,7 @@ This matrix maps every functional requirement (FR), business rule (BR), non-func
 | NFR-04 | Max transaction amount cap 1,000,000,000 satang | API boundary test | Passed (SR-01) |
 | NFR-05 | 8-hour absolute session expiration | Unit test on session expiry calculation | Passed (F-01) |
 | NFR-06 | Clean architecture with decoupled ledger engine | Code review & isolation verification | Passed (SR-01) |
-| NFR-07 | Database transactions on multi-line inserts | Concurrency / transactional rollback test | Planned (Sprint 1) |
+| NFR-07 | Database transactions on multi-line inserts | Concurrency / transactional rollback test | Passed (F-05) |
 | NFR-08 | Generic error messages without leaking stack traces | API error handling test | Passed (SR-02) |
 | NFR-09 | Immediate derived balance consistency | Unit tests on balance derivation | Passed (SR-01) |
 | NFR-10 | Responsive UI with loading, empty, and error states | Visual and UI behavior tests (360px+) | Passed (F-02, F-03) |
@@ -106,3 +106,4 @@ This matrix maps every functional requirement (FR), business rule (BR), non-func
 | 2026-10-23 | Baseline v0.1 created | Initial planning | Team |
 | 2026-10-23 | Sprint 1 AC and STS IDs added (v1.0) | Feature engineering contracts created for Issue #1 | Team |
 | 2026-11-03 | F-04 opening balance recording verified | Issue #8 implemented and all test cases passing | Team |
+| 2026-11-04 | F-05 receive money transactions verified | Issue #9 implemented; FR-13, BR-01, BR-03, BR-04, BR-09, BR-11, NFR-07 passing | Team |
