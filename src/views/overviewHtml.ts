@@ -228,6 +228,8 @@ export const overviewHtml = `<!DOCTYPE html>
       border-radius: 10px;
       max-width: 480px;
       width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
       padding: 1.5rem;
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     }
@@ -311,6 +313,62 @@ export const overviewHtml = `<!DOCTYPE html>
       gap: 0.75rem;
       margin-top: 1.5rem;
     }
+
+    /* Allocation Row Styling */
+    .allocation-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      align-items: center;
+      background: #f8fafc;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+    }
+    .allocation-row select {
+      flex: 3;
+      min-width: 130px;
+    }
+    .allocation-row input[type="number"] {
+      flex: 2;
+      min-width: 90px;
+    }
+    .allocation-row input[type="text"] {
+      flex: 3;
+      min-width: 110px;
+    }
+    .allocation-row .btn-remove {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+    .allocation-row .btn-remove:hover {
+      background: #fca5a5;
+    }
+    .sum-indicator {
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem;
+      border-radius: 6px;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+    .sum-match {
+      background-color: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    .sum-mismatch {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
   </style>
 </head>
 <body>
@@ -321,6 +379,7 @@ export const overviewHtml = `<!DOCTYPE html>
         <p class="subtitle">Live Derived Balances & Financial Position</p>
       </div>
       <div class="header-actions">
+        <button id="receiveMoneyBtn" class="btn-primary" onclick="openReceiveMoneyModal()" style="display: none;">+ Receive Money</button>
         <button id="openModalBtn" class="btn-primary" onclick="openOpeningBalanceModal()" style="display: none;">+ Record Opening Balance</button>
         <div id="userInfo" class="user-badge" style="display: none;"></div>
         <button id="btnLogout" class="btn-outline-danger" onclick="handleLogout()" style="display: none;">Log Out</button>
@@ -447,6 +506,74 @@ export const overviewHtml = `<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- Receive Money Modal (F-05, FR-13, BR-01, BR-03, BR-04, BR-09, BR-11, NFR-03, NFR-10) -->
+  <div id="receiveMoneyModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>Receive Money</h3>
+        <button class="modal-close" onclick="closeReceiveMoneyModal()" aria-label="Close modal">&times;</button>
+      </div>
+      <p class="modal-desc">
+        Record money received into a Cash/Bank account and allocate it across Income categories.
+      </p>
+
+      <div id="receiptAlert" class="alert-box alert-error" style="display: none;"></div>
+      <div id="receiptSuccess" class="alert-box alert-success" style="display: none;"></div>
+
+      <form id="receiveMoneyForm" onsubmit="handleReceiptSubmit(event)">
+        <div class="form-group">
+          <label for="receiptMainAccountSelect">Receiving Cash Account *</label>
+          <select id="receiptMainAccountSelect" required>
+            <option value="">-- Select receiving cash account --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="receiptTotalBaht">Total Amount Received (THB) *</label>
+          <input
+            type="number"
+            id="receiptTotalBaht"
+            step="0.01"
+            min="0.01"
+            max="10000000"
+            placeholder="e.g. 30000.00"
+            required
+            oninput="handleReceiptTotalInput(this.value)"
+          />
+          <div id="receiptSatangPreview" class="satang-preview text-danger">
+            Enter a positive amount (> 0 satang)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="receiptDate">Transaction Date *</label>
+          <input type="date" id="receiptDate" required />
+        </div>
+
+        <div class="form-group">
+          <label for="receiptDescription">Description (Optional)</label>
+          <input type="text" id="receiptDescription" placeholder="e.g. October Monthly Salary" />
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label style="margin-bottom: 0;">Income Allocations *</label>
+            <button type="button" id="btnAddAllocation" class="btn-sm" onclick="addAllocationRow()">+ Add Category</button>
+          </div>
+          <div id="allocationsContainer"></div>
+          <div id="allocationSumStatus" class="sum-indicator sum-mismatch">
+            Total allocations must match total amount.
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeReceiveMoneyModal()">Cancel</button>
+          <button type="submit" id="btnSubmitReceipt" class="btn-primary" disabled>Record Receipt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     let globalAccounts = [];
 
@@ -460,6 +587,7 @@ export const overviewHtml = `<!DOCTYPE html>
           badge.style.display = 'inline-block';
           document.getElementById('btnLogout').style.display = 'inline-block';
           document.getElementById('openModalBtn').style.display = 'inline-flex';
+          document.getElementById('receiveMoneyBtn').style.display = 'inline-flex';
         }
       } catch (e) {}
     }
@@ -507,6 +635,7 @@ export const overviewHtml = `<!DOCTYPE html>
       document.getElementById('userInfo').style.display = 'none';
       document.getElementById('btnLogout').style.display = 'none';
       document.getElementById('openModalBtn').style.display = 'none';
+      document.getElementById('receiveMoneyBtn').style.display = 'none';
       document.getElementById('contentState').style.display = 'none';
       document.getElementById('loginState').style.display = 'block';
     }
@@ -740,6 +869,265 @@ export const overviewHtml = `<!DOCTYPE html>
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Record Balance';
+      }
+    }
+
+    /* Receive Money Modal Logic (F-05) */
+    function openReceiveMoneyModal() {
+      const modal = document.getElementById('receiveMoneyModal');
+      const mainSelect = document.getElementById('receiptMainAccountSelect');
+      const totalInput = document.getElementById('receiptTotalBaht');
+      const dateInput = document.getElementById('receiptDate');
+      const descInput = document.getElementById('receiptDescription');
+      const alertBox = document.getElementById('receiptAlert');
+      const successBox = document.getElementById('receiptSuccess');
+      const container = document.getElementById('allocationsContainer');
+
+      alertBox.style.display = 'none';
+      successBox.style.display = 'none';
+      totalInput.value = '';
+      descInput.value = '';
+      handleReceiptTotalInput('');
+
+      // Set default date to today and max to today (BR-09)
+      const today = new Date().toISOString().slice(0, 10);
+      dateInput.value = today;
+      dateInput.max = today;
+
+      // Populate cash accounts dropdown (BR-03: Cash receiving money)
+      mainSelect.innerHTML = '<option value="">-- Select receiving cash account --</option>';
+      const cashAccounts = globalAccounts.filter(a => a.type === 'CASH');
+      cashAccounts.forEach(acc => {
+        const opt = document.createElement('option');
+        opt.value = acc.id;
+        opt.textContent = \`\${acc.name} (\${acc.subtype !== 'NONE' ? acc.subtype : 'CASH'})\`;
+        mainSelect.appendChild(opt);
+      });
+
+      // Clear and add initial allocation row
+      container.innerHTML = '';
+      addAllocationRow();
+
+      updateAllocationSum();
+      modal.style.display = 'flex';
+    }
+
+    function closeReceiveMoneyModal() {
+      const modal = document.getElementById('receiveMoneyModal');
+      modal.style.display = 'none';
+    }
+
+    function addAllocationRow(targetAccountId = '', amount = '', memo = '') {
+      const container = document.getElementById('allocationsContainer');
+      const row = document.createElement('div');
+      row.className = 'allocation-row';
+
+      const incomeAccounts = globalAccounts.filter(a => a.type === 'INCOME');
+      let optionsHtml = '<option value="">-- Select income category --</option>';
+      incomeAccounts.forEach(acc => {
+        const selected = acc.id === targetAccountId ? 'selected' : '';
+        optionsHtml += \`<option value="\${acc.id}" \${selected}>\${acc.name}</option>\`;
+      });
+
+      row.innerHTML = \`
+        <select class="alloc-target" required>
+          \${optionsHtml}
+        </select>
+        <input
+          type="number"
+          class="alloc-amount"
+          step="0.01"
+          min="0.01"
+          placeholder="Amount (THB)"
+          value="\${amount}"
+          required
+          oninput="updateAllocationSum()"
+        />
+        <input
+          type="text"
+          class="alloc-memo"
+          placeholder="Memo (Optional)"
+          value="\${memo}"
+        />
+        <button type="button" class="btn-remove" onclick="removeAllocationRow(this)" title="Remove category">&times;</button>
+      \`;
+
+      container.appendChild(row);
+      updateAllocationSum();
+    }
+
+    function removeAllocationRow(btn) {
+      const row = btn.closest('.allocation-row');
+      const container = document.getElementById('allocationsContainer');
+      if (container.querySelectorAll('.allocation-row').length > 1) {
+        row.remove();
+      } else {
+        // Reset the single remaining row instead of removing it
+        row.querySelector('.alloc-target').value = '';
+        row.querySelector('.alloc-amount').value = '';
+        row.querySelector('.alloc-memo').value = '';
+      }
+      updateAllocationSum();
+    }
+
+    function handleReceiptTotalInput(val) {
+      const satangEl = document.getElementById('receiptSatangPreview');
+      const num = parseFloat(val);
+
+      if (val === '' || isNaN(num) || num <= 0) {
+        satangEl.textContent = 'Enter a positive amount (> 0 satang)';
+        satangEl.className = 'satang-preview text-danger';
+      } else {
+        const satang = Math.round(num * 100);
+        if (satang < 1) {
+          satangEl.textContent = 'Amount must be at least 1 satang (0.01 THB)';
+          satangEl.className = 'satang-preview text-danger';
+        } else if (satang > 1000000000) {
+          satangEl.textContent = 'Amount exceeds maximum limit (1,000,000,000 satang / 10,000,000 THB)';
+          satangEl.className = 'satang-preview text-danger';
+        } else {
+          satangEl.textContent = satang.toLocaleString('en-US') + ' satang';
+          satangEl.className = 'satang-preview text-success';
+        }
+      }
+      updateAllocationSum();
+    }
+
+    function updateAllocationSum() {
+      const totalInput = document.getElementById('receiptTotalBaht');
+      const statusEl = document.getElementById('allocationSumStatus');
+      const submitBtn = document.getElementById('btnSubmitReceipt');
+      const totalNum = parseFloat(totalInput.value);
+
+      if (isNaN(totalNum) || totalNum <= 0) {
+        statusEl.className = 'sum-indicator sum-mismatch';
+        statusEl.textContent = 'Enter a valid total amount received';
+        submitBtn.disabled = true;
+        return;
+      }
+
+      const totalSatang = Math.round(totalNum * 100);
+      const rows = document.querySelectorAll('#allocationsContainer .allocation-row');
+      let allocSatangSum = 0;
+      let allTargetsSelected = rows.length > 0;
+
+      rows.forEach(r => {
+        const targetVal = r.querySelector('.alloc-target').value;
+        const amountVal = parseFloat(r.querySelector('.alloc-amount').value);
+        if (!targetVal) allTargetsSelected = false;
+        if (!isNaN(amountVal) && amountVal > 0) {
+          allocSatangSum += Math.round(amountVal * 100);
+        }
+      });
+
+      const diff = totalSatang - allocSatangSum;
+
+      if (diff === 0 && allocSatangSum > 0 && allTargetsSelected) {
+        statusEl.className = 'sum-indicator sum-match';
+        statusEl.textContent = \`Allocations match total: ฿\${(allocSatangSum / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}\`;
+        submitBtn.disabled = false;
+      } else if (diff > 0) {
+        statusEl.className = 'sum-indicator sum-mismatch';
+        statusEl.textContent = \`Remaining to allocate: ฿\${(diff / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}\`;
+        submitBtn.disabled = true;
+      } else {
+        statusEl.className = 'sum-indicator sum-mismatch';
+        statusEl.textContent = \`Over-allocated by: ฿\${(Math.abs(diff) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}\`;
+        submitBtn.disabled = true;
+      }
+    }
+
+    async function handleReceiptSubmit(event) {
+      event.preventDefault();
+
+      const alertBox = document.getElementById('receiptAlert');
+      const successBox = document.getElementById('receiptSuccess');
+      const submitBtn = document.getElementById('btnSubmitReceipt');
+      const mainAccountId = document.getElementById('receiptMainAccountSelect').value;
+      const totalBaht = parseFloat(document.getElementById('receiptTotalBaht').value);
+      const transactionDate = document.getElementById('receiptDate').value;
+      const description = document.getElementById('receiptDescription').value;
+
+      alertBox.style.display = 'none';
+      successBox.style.display = 'none';
+
+      if (!mainAccountId) {
+        alertBox.textContent = 'Please select a receiving cash account';
+        alertBox.style.display = 'block';
+        return;
+      }
+
+      if (isNaN(totalBaht) || totalBaht <= 0) {
+        alertBox.textContent = 'Total amount must be greater than 0';
+        alertBox.style.display = 'block';
+        return;
+      }
+
+      const totalMinor = Math.round(totalBaht * 100);
+
+      const rows = document.querySelectorAll('#allocationsContainer .allocation-row');
+      const allocations = [];
+
+      for (const r of rows) {
+        const targetAccountId = r.querySelector('.alloc-target').value;
+        const lineBaht = parseFloat(r.querySelector('.alloc-amount').value);
+        const memo = r.querySelector('.alloc-memo').value;
+
+        if (!targetAccountId) {
+          alertBox.textContent = 'All allocation lines must specify an income category';
+          alertBox.style.display = 'block';
+          return;
+        }
+
+        if (isNaN(lineBaht) || lineBaht <= 0) {
+          alertBox.textContent = 'All allocation amounts must be positive';
+          alertBox.style.display = 'block';
+          return;
+        }
+
+        allocations.push({
+          targetAccountId,
+          amountMinor: Math.round(lineBaht * 100),
+          memo: memo || undefined
+        });
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Recording...';
+
+      try {
+        const res = await fetch('/api/transactions/receipt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            mainAccountId,
+            totalMinor,
+            transactionDate,
+            description: description || undefined,
+            allocations
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.error?.message || 'Failed to record receipt (status ' + res.status + ')');
+        }
+
+        successBox.textContent = 'Money receipt recorded successfully!';
+        successBox.style.display = 'block';
+
+        setTimeout(() => {
+          closeReceiveMoneyModal();
+          fetchAccounts();
+        }, 800);
+      } catch (err) {
+        alertBox.textContent = err.message;
+        alertBox.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Record Receipt';
       }
     }
 
