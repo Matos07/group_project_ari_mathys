@@ -435,6 +435,23 @@ export const overviewHtml = `<!DOCTYPE html>
         </div>
       </div>
 
+      <!-- Income & Expense Summary Cards (F-07, FR-22, BR-05, NFR-10) -->
+      <h2 class="section-title" style="margin-top: 1.5rem;">Income & Expense Summary</h2>
+      <div id="incomeExpenseSummary" class="summary-grid">
+        <div class="card" style="border-left: 4px solid #16a34a;">
+          <div class="card-title">Total Income</div>
+          <div id="summaryIncome" class="card-amount" style="color: #16a34a;">฿0.00</div>
+        </div>
+        <div class="card" style="border-left: 4px solid #dc2626;">
+          <div class="card-title">Total Expense</div>
+          <div id="summaryExpense" class="card-amount" style="color: #dc2626;">฿0.00</div>
+        </div>
+        <div class="card" style="border-left: 4px solid #2563eb;">
+          <div class="card-title">Net Flow</div>
+          <div id="summaryNet" class="card-amount" style="color: #2563eb;">฿0.00</div>
+        </div>
+      </div>
+
       <!-- Cash Accounts -->
       <h2 class="section-title">Cash & Bank Accounts</h2>
       <div id="cashList" class="accounts-list"></div>
@@ -446,6 +463,38 @@ export const overviewHtml = `<!DOCTYPE html>
       <!-- Receivable Accounts -->
       <h2 class="section-title">Loans Given (Owed to You)</h2>
       <div id="receivableList" class="accounts-list"></div>
+
+      <!-- Transaction History (F-07, FR-21, NFR-10) -->
+      <div style="margin-top: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h2 class="section-title" style="margin-bottom: 0;">Transaction History</h2>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button id="btnPrevPage" class="btn-secondary" onclick="prevHistoryPage()" disabled style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Previous</button>
+            <span id="historyPageIndicator" style="font-size: 0.85rem; color: #64748b;">Page 1 of 1</span>
+            <button id="btnNextPage" class="btn-secondary" onclick="nextHistoryPage()" disabled style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Next</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <table id="historyTable" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+            <thead>
+              <tr style="background-color: #f1f5f9; border-bottom: 1px solid #e2e8f0; color: #475569;">
+                <th style="padding: 0.75rem 1rem;">Date</th>
+                <th style="padding: 0.75rem 1rem;">Kind</th>
+                <th style="padding: 0.75rem 1rem;">Main Account</th>
+                <th style="padding: 0.75rem 1rem;">Description</th>
+                <th style="padding: 0.75rem 1rem; text-align: right;">Total</th>
+                <th style="padding: 0.75rem 1rem; text-align: center;">Details</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr>
+                <td colspan="6" style="padding: 1.5rem; text-align: center; color: #94a3b8;">Loading transactions...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -739,6 +788,8 @@ export const overviewHtml = `<!DOCTYPE html>
         globalAccounts = data.accounts || [];
         await checkCurrentUser();
         renderOverview(data);
+        fetchSummary();
+        fetchTransactionHistory(1);
 
         loading.style.display = 'none';
         content.style.display = 'block';
@@ -1489,6 +1540,105 @@ export const overviewHtml = `<!DOCTYPE html>
         submitBtn.textContent = 'Record Payment';
       }
     }
+    async function fetchSummary() {
+      try {
+        const res = await fetch('/api/summary/income-expense', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const incEl = document.getElementById('summaryIncome');
+        const expEl = document.getElementById('summaryExpense');
+        const netEl = document.getElementById('summaryNet');
+        if (incEl) incEl.textContent = data.incomeFormatted;
+        if (expEl) expEl.textContent = data.expenseFormatted;
+        if (netEl) netEl.textContent = data.netFormatted;
+      } catch (e) {
+        console.error('Failed to fetch summary:', e);
+      }
+    }
+
+    let currentHistoryPage = 1;
+    let totalHistoryPages = 1;
+
+    async function fetchTransactionHistory(page = 1) {
+      try {
+        const res = await fetch('/api/transactions?page=' + page + '&pageSize=20', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        currentHistoryPage = data.pagination?.page || 1;
+        totalHistoryPages = data.pagination?.totalPages || 1;
+
+        const indicator = document.getElementById('historyPageIndicator');
+        if (indicator) {
+          indicator.textContent = 'Page ' + currentHistoryPage + ' of ' + Math.max(1, totalHistoryPages);
+        }
+
+        const btnPrev = document.getElementById('btnPrevPage');
+        const btnNext = document.getElementById('btnNextPage');
+        if (btnPrev) btnPrev.disabled = currentHistoryPage <= 1;
+        if (btnNext) btnNext.disabled = currentHistoryPage >= totalHistoryPages;
+
+        const tbody = document.getElementById('historyTableBody');
+        if (!tbody) return;
+
+        if (!data.transactions || data.transactions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94a3b8;">No transactions recorded yet.</td></tr>';
+          return;
+        }
+
+        let html = '';
+        data.transactions.forEach((tx, idx) => {
+          const kindBadgeClass =
+            tx.kind === 'RECEIPT' ? 'badge-cash' :
+            tx.kind === 'PAYMENT' ? 'badge-debt' : 'badge-status badge-recorded';
+          const allocCount = tx.allocations ? tx.allocations.length : 0;
+          const detailsId = 'tx-details-' + idx;
+
+          html += '<tr style="border-bottom: 1px solid #e2e8f0;">' +
+            '<td style="padding: 0.75rem 1rem; color: #64748b; white-space: nowrap;">' + tx.transactionDate + '</td>' +
+            '<td style="padding: 0.75rem 1rem;"><span class="badge-status ' + kindBadgeClass + '">' + tx.kind + '</span></td>' +
+            '<td style="padding: 0.75rem 1rem; font-weight: 500;">' + (tx.mainAccountName || '-') + '</td>' +
+            '<td style="padding: 0.75rem 1rem; color: #334155;">' + (tx.description || '-') + '</td>' +
+            '<td style="padding: 0.75rem 1rem; text-align: right; font-weight: 600; font-family: monospace;">' + tx.totalFormatted + '</td>' +
+            '<td style="padding: 0.75rem 1rem; text-align: center;">' +
+            (allocCount > 0 ? '<button class="btn-sm" onclick="toggleDetails(\'' + detailsId + '\')">' + allocCount + ' line' + (allocCount > 1 ? 's' : '') + '</button>' : '-') +
+            '</td></tr>';
+
+          if (allocCount > 0) {
+            html += '<tr id="' + detailsId + '" style="display: none; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">' +
+              '<td colspan="6" style="padding: 0.75rem 1.5rem;">' +
+              '<div style="font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 0.35rem;">Allocation Lines:</div>' +
+              '<ul style="list-style: none; padding-left: 0; margin: 0; font-size: 0.825rem;">' +
+              tx.allocations.map(a => '<li style="display: flex; justify-content: space-between; padding: 0.2rem 0; border-bottom: 1px dashed #e2e8f0;"><span><strong>' + a.targetAccountName + '</strong> (' + a.targetAccountType + ')' + (a.memo ? ' - ' + a.memo : '') + '</span><span style="font-family: monospace; font-weight: 500;">' + a.amountFormatted + '</span></li>').join('') +
+              '</ul></td></tr>';
+          }
+        });
+
+        tbody.innerHTML = html;
+      } catch (e) {
+        console.error('Failed to fetch transaction history:', e);
+      }
+    }
+
+    function toggleDetails(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+      }
+    }
+
+    function prevHistoryPage() {
+      if (currentHistoryPage > 1) {
+        fetchTransactionHistory(currentHistoryPage - 1);
+      }
+    }
+
+    function nextHistoryPage() {
+      if (currentHistoryPage < totalHistoryPages) {
+        fetchTransactionHistory(currentHistoryPage + 1);
+      }
+    }
+
+
 
     // Initial load
     fetchAccounts();

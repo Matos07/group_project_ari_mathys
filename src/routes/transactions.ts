@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../db/client.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { formatSatang } from '../utils/currency.js';
 import {
   MAX_TRANSACTION_AMOUNT_MINOR,
   validateTransaction,
@@ -627,6 +628,142 @@ transactionsRouter.post(
             targetAccountId: line.targetAccountId,
             amountMinor: line.amountMinor,
             memo: line.memo
+          }))
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/transactions
+ * Returns a paginated list of transactions for the authenticated user,
+ * ordered descending by creation time (createdAt: 'desc').
+ * Implements F-07, FR-21, BR-10, D-15, D-16, AC-F07-01..02.
+ */
+transactionsRouter.get(
+  '/',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+
+      const rawPage = parseInt(String(req.query.page ?? '1'), 10);
+      const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+
+      const rawPageSize = parseInt(String(req.query.pageSize ?? '20'), 10);
+      const pageSize = isNaN(rawPageSize) || rawPageSize < 1 ? 20 : Math.min(100, rawPageSize);
+
+      const totalCount = await prisma.transaction.count({
+        where: { userId }
+      });
+
+      const transactions = await prisma.transaction.findMany({
+        where: { userId },
+        include: {
+          mainAccount: true,
+          allocations: {
+            include: {
+              targetAccount: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize
+      });
+
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      res.status(200).json({
+        transactions: transactions.map((t) => ({
+          id: t.id,
+          kind: t.kind,
+          mainAccountId: t.mainAccountId,
+          mainAccountName: t.mainAccount.name,
+          totalMinor: t.totalMinor,
+          totalFormatted: formatSatang(t.totalMinor),
+          transactionDate: t.transactionDate,
+          description: t.description,
+          createdAt: t.createdAt.toISOString(),
+          allocations: t.allocations.map((a) => ({
+            id: a.id,
+            targetAccountId: a.targetAccountId,
+            targetAccountName: a.targetAccount.name,
+            targetAccountType: a.targetAccount.type,
+            amountMinor: a.amountMinor,
+            amountFormatted: formatSatang(a.amountMinor),
+            memo: a.memo
+          }))
+        })),
+        pagination: {
+          page,
+          pageSize,
+          totalCount,
+          totalPages
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/transactions/:id
+ * Returns details of a single transaction including allocation lines.
+ * Returns 404 TRANSACTION_NOT_FOUND if transaction does not exist or belongs to another user (BR-10, D-15).
+ * Implements F-07, FR-21, BR-10, D-15, AC-F07-02.
+ */
+transactionsRouter.get(
+  '/:id',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params;
+
+      const transaction = await prisma.transaction.findUnique({
+        where: { id },
+        include: {
+          mainAccount: true,
+          allocations: {
+            include: {
+              targetAccount: true
+            }
+          }
+        }
+      });
+
+      if (!transaction || transaction.userId !== userId) {
+        res.status(404).json({
+          error: {
+            code: 'TRANSACTION_NOT_FOUND',
+            message: 'Transaction not found'
+          }
+        });
+        return;
+      }
+
+      res.status(200).json({
+        transaction: {
+          id: transaction.id,
+          kind: transaction.kind,
+          mainAccountId: transaction.mainAccountId,
+          mainAccountName: transaction.mainAccount.name,
+          totalMinor: transaction.totalMinor,
+          totalFormatted: formatSatang(transaction.totalMinor),
+          transactionDate: transaction.transactionDate,
+          description: transaction.description,
+          createdAt: transaction.createdAt.toISOString(),
+          allocations: transaction.allocations.map((a) => ({
+            id: a.id,
+            targetAccountId: a.targetAccountId,
+            targetAccountName: a.targetAccount.name,
+            targetAccountType: a.targetAccount.type,
+            amountMinor: a.amountMinor,
+            amountFormatted: formatSatang(a.amountMinor),
+            memo: a.memo
           }))
         }
       });
