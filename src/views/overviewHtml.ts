@@ -379,6 +379,7 @@ export const overviewHtml = `<!DOCTYPE html>
         <p class="subtitle">Live Derived Balances & Financial Position</p>
       </div>
       <div class="header-actions">
+        <button id="makePaymentBtn" class="btn-primary" onclick="openPaymentModal()" style="display: none;">+ Record Payment</button>
         <button id="receiveMoneyBtn" class="btn-primary" onclick="openReceiveMoneyModal()" style="display: none;">+ Receive Money</button>
         <button id="openModalBtn" class="btn-primary" onclick="openOpeningBalanceModal()" style="display: none;">+ Record Opening Balance</button>
         <div id="userInfo" class="user-badge" style="display: none;"></div>
@@ -574,6 +575,74 @@ export const overviewHtml = `<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- Payment / Charge Modal (F-06, FR-14, FR-15, BR-01, BR-03, BR-04, BR-07, BR-08, BR-09, BR-11, NFR-03, NFR-10) -->
+  <div id="paymentModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>Record Payment / Expense</h3>
+        <button class="modal-close" onclick="closePaymentModal()" aria-label="Close modal">&times;</button>
+      </div>
+      <p class="modal-desc">
+        Record an expense payment or debt repayment from a Cash account or Credit Card.
+      </p>
+
+      <div id="paymentAlert" class="alert-box alert-error" style="display: none;"></div>
+      <div id="paymentSuccess" class="alert-box alert-success" style="display: none;"></div>
+
+      <form id="paymentForm" onsubmit="handlePaymentSubmit(event)">
+        <div class="form-group">
+          <label for="paymentMainAccountSelect">Payment Source Account *</label>
+          <select id="paymentMainAccountSelect" required onchange="handlePaymentSourceChange()">
+            <option value="">-- Select paying account (Cash / Credit Card) --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="paymentTotalBaht">Total Payment Amount (THB) *</label>
+          <input
+            type="number"
+            id="paymentTotalBaht"
+            step="0.01"
+            min="0.01"
+            max="10000000"
+            placeholder="e.g. 1200.00"
+            required
+            oninput="handlePaymentTotalInput(this.value)"
+          />
+          <div id="paymentSatangPreview" class="satang-preview text-danger">
+            Enter a positive amount (> 0 satang)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="paymentDate">Transaction Date *</label>
+          <input type="date" id="paymentDate" required />
+        </div>
+
+        <div class="form-group">
+          <label for="paymentDescription">Description (Optional)</label>
+          <input type="text" id="paymentDescription" placeholder="e.g. Weekend Supermarket & Dinner" />
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label style="margin-bottom: 0;">Allocations (Expenses & Repayments) *</label>
+            <button type="button" id="btnAddPaymentAllocation" class="btn-sm" onclick="addPaymentAllocationRow()">+ Add Category</button>
+          </div>
+          <div id="paymentAllocationsContainer"></div>
+          <div id="paymentSumStatus" class="sum-indicator sum-mismatch">
+            Total allocations must match payment total.
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closePaymentModal()">Cancel</button>
+          <button type="submit" id="btnSubmitPayment" class="btn-primary" disabled>Record Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     let globalAccounts = [];
 
@@ -588,6 +657,7 @@ export const overviewHtml = `<!DOCTYPE html>
           document.getElementById('btnLogout').style.display = 'inline-block';
           document.getElementById('openModalBtn').style.display = 'inline-flex';
           document.getElementById('receiveMoneyBtn').style.display = 'inline-flex';
+          document.getElementById('makePaymentBtn').style.display = 'inline-flex';
         }
       } catch (e) {}
     }
@@ -636,6 +706,7 @@ export const overviewHtml = `<!DOCTYPE html>
       document.getElementById('btnLogout').style.display = 'none';
       document.getElementById('openModalBtn').style.display = 'none';
       document.getElementById('receiveMoneyBtn').style.display = 'none';
+      document.getElementById('makePaymentBtn').style.display = 'none';
       document.getElementById('contentState').style.display = 'none';
       document.getElementById('loginState').style.display = 'block';
     }
@@ -1128,6 +1199,294 @@ export const overviewHtml = `<!DOCTYPE html>
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Record Receipt';
+      }
+    }
+
+    /* Payment / Charge Modal Logic (F-06) */
+    function openPaymentModal() {
+      const modal = document.getElementById('paymentModal');
+      const mainSelect = document.getElementById('paymentMainAccountSelect');
+      const totalInput = document.getElementById('paymentTotalBaht');
+      const dateInput = document.getElementById('paymentDate');
+      const descInput = document.getElementById('paymentDescription');
+      const alertBox = document.getElementById('paymentAlert');
+      const successBox = document.getElementById('paymentSuccess');
+      const container = document.getElementById('paymentAllocationsContainer');
+
+      alertBox.style.display = 'none';
+      successBox.style.display = 'none';
+      totalInput.value = '';
+      descInput.value = '';
+      handlePaymentTotalInput('');
+
+      // Set default date to today and max to today (BR-09)
+      const today = new Date().toISOString().slice(0, 10);
+      dateInput.value = today;
+      dateInput.max = today;
+
+      // Populate paying source accounts dropdown (CASH and LOAN_TAKEN per BR-03)
+      mainSelect.innerHTML = '<option value="">-- Select paying account (Cash / Credit Card) --</option>';
+      const payingAccounts = globalAccounts.filter(a => ['CASH', 'LOAN_TAKEN'].includes(a.type));
+      payingAccounts.forEach(acc => {
+        const opt = document.createElement('option');
+        opt.value = acc.id;
+        opt.textContent = \`\${acc.name} (\${acc.type === 'CASH' ? 'Cash' : 'Credit / Loan'})\`;
+        mainSelect.appendChild(opt);
+      });
+
+      // Clear and add initial allocation row
+      container.innerHTML = '';
+      addPaymentAllocationRow();
+
+      updatePaymentAllocationSum();
+      modal.style.display = 'flex';
+    }
+
+    function closePaymentModal() {
+      const modal = document.getElementById('paymentModal');
+      modal.style.display = 'none';
+    }
+
+    function handlePaymentSourceChange() {
+      // Re-populate target account dropdowns to reflect exclusion of mainAccount (BR-04)
+      const rows = document.querySelectorAll('#paymentAllocationsContainer .payment-alloc-row');
+      rows.forEach(r => {
+        const select = r.querySelector('.payment-alloc-target');
+        const currentVal = select.value;
+        const mainId = document.getElementById('paymentMainAccountSelect').value;
+
+        const eligibleAccounts = globalAccounts.filter(a => {
+          if (a.id === mainId) return false; // BR-04: target cannot equal main
+          return a.type === 'EXPENSE' || a.type === 'LOAN_TAKEN';
+        });
+
+        let optionsHtml = '<option value="">-- Select expense or repayment --</option>';
+        eligibleAccounts.forEach(acc => {
+          const selected = acc.id === currentVal ? 'selected' : '';
+          const label = acc.type === 'EXPENSE' ? acc.name : \`\${acc.name} (Debt Repayment)\`;
+          optionsHtml += \`<option value="\${acc.id}" \${selected}>\${label}</option>\`;
+        });
+        select.innerHTML = optionsHtml;
+      });
+      updatePaymentAllocationSum();
+    }
+
+    function addPaymentAllocationRow(targetAccountId = '', amount = '', memo = '') {
+      const container = document.getElementById('paymentAllocationsContainer');
+      const row = document.createElement('div');
+      row.className = 'allocation-row payment-alloc-row';
+
+      const mainId = document.getElementById('paymentMainAccountSelect').value;
+      const eligibleAccounts = globalAccounts.filter(a => {
+        if (a.id === mainId) return false;
+        return a.type === 'EXPENSE' || a.type === 'LOAN_TAKEN';
+      });
+
+      let optionsHtml = '<option value="">-- Select expense or repayment --</option>';
+      eligibleAccounts.forEach(acc => {
+        const selected = acc.id === targetAccountId ? 'selected' : '';
+        const label = acc.type === 'EXPENSE' ? acc.name : \`\${acc.name} (Debt Repayment)\`;
+        optionsHtml += \`<option value="\${acc.id}" \${selected}>\${label}</option>\`;
+      });
+
+      row.innerHTML = \`
+        <select class="payment-alloc-target" required onchange="updatePaymentAllocationSum()">
+          \${optionsHtml}
+        </select>
+        <input
+          type="number"
+          class="payment-alloc-amount"
+          step="0.01"
+          min="0.01"
+          placeholder="Amount (THB)"
+          value="\${amount}"
+          required
+          oninput="updatePaymentAllocationSum()"
+        />
+        <input
+          type="text"
+          class="payment-alloc-memo"
+          placeholder="Memo (Optional)"
+          value="\${memo}"
+        />
+        <button type="button" class="btn-remove" onclick="removePaymentAllocationRow(this)" title="Remove line">&times;</button>
+      \`;
+
+      container.appendChild(row);
+      updatePaymentAllocationSum();
+    }
+
+    function removePaymentAllocationRow(btn) {
+      const row = btn.closest('.payment-alloc-row');
+      const container = document.getElementById('paymentAllocationsContainer');
+      if (container.querySelectorAll('.payment-alloc-row').length > 1) {
+        row.remove();
+      } else {
+        row.querySelector('.payment-alloc-target').value = '';
+        row.querySelector('.payment-alloc-amount').value = '';
+        row.querySelector('.payment-alloc-memo').value = '';
+      }
+      updatePaymentAllocationSum();
+    }
+
+    function handlePaymentTotalInput(val) {
+      const satangEl = document.getElementById('paymentSatangPreview');
+      const num = parseFloat(val);
+
+      if (val === '' || isNaN(num) || num <= 0) {
+        satangEl.textContent = 'Enter a positive amount (> 0 satang)';
+        satangEl.className = 'satang-preview text-danger';
+      } else {
+        const satang = Math.round(num * 100);
+        if (satang < 1) {
+          satangEl.textContent = 'Amount must be at least 1 satang (0.01 THB)';
+          satangEl.className = 'satang-preview text-danger';
+        } else if (satang > 1000000000) {
+          satangEl.textContent = 'Amount exceeds maximum limit (1,000,000,000 satang / 10,000,000 THB)';
+          satangEl.className = 'satang-preview text-danger';
+        } else {
+          satangEl.textContent = satang.toLocaleString('en-US') + ' satang';
+          satangEl.className = 'satang-preview text-success';
+        }
+      }
+      updatePaymentAllocationSum();
+    }
+
+    function updatePaymentAllocationSum() {
+      const totalInput = document.getElementById('paymentTotalBaht');
+      const statusEl = document.getElementById('paymentSumStatus');
+      const submitBtn = document.getElementById('btnSubmitPayment');
+      const totalNum = parseFloat(totalInput.value);
+
+      if (isNaN(totalNum) || totalNum <= 0) {
+        statusEl.className = 'sum-indicator sum-mismatch';
+        statusEl.textContent = 'Enter a valid payment total amount';
+        submitBtn.disabled = true;
+        return;
+      }
+
+      const totalSatang = Math.round(totalNum * 100);
+      const rows = document.querySelectorAll('#paymentAllocationsContainer .payment-alloc-row');
+      let allocSatangSum = 0;
+      let allTargetsSelected = rows.length > 0;
+
+      rows.forEach(r => {
+        const targetVal = r.querySelector('.payment-alloc-target').value;
+        const amountVal = parseFloat(r.querySelector('.payment-alloc-amount').value);
+        if (!targetVal) allTargetsSelected = false;
+        if (!isNaN(amountVal) && amountVal > 0) {
+          allocSatangSum += Math.round(amountVal * 100);
+        }
+      });
+
+      const diff = totalSatang - allocSatangSum;
+
+      if (diff === 0 && allocSatangSum > 0 && allTargetsSelected) {
+        statusEl.className = 'sum-indicator sum-match';
+        statusEl.textContent = \`Allocations match total: ฿\${(allocSatangSum / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}\`;
+        submitBtn.disabled = false;
+      } else if (diff > 0) {
+        statusEl.className = 'sum-indicator sum-mismatch';
+        statusEl.textContent = \`Remaining to allocate: ฿\${(diff / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}\`;
+        submitBtn.disabled = true;
+      } else {
+        statusEl.className = 'sum-indicator sum-mismatch';
+        statusEl.textContent = \`Over-allocated by: ฿\${(Math.abs(diff) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}\`;
+        submitBtn.disabled = true;
+      }
+    }
+
+    async function handlePaymentSubmit(event) {
+      event.preventDefault();
+
+      const alertBox = document.getElementById('paymentAlert');
+      const successBox = document.getElementById('paymentSuccess');
+      const submitBtn = document.getElementById('btnSubmitPayment');
+      const mainAccountId = document.getElementById('paymentMainAccountSelect').value;
+      const totalBaht = parseFloat(document.getElementById('paymentTotalBaht').value);
+      const transactionDate = document.getElementById('paymentDate').value;
+      const description = document.getElementById('paymentDescription').value;
+
+      alertBox.style.display = 'none';
+      successBox.style.display = 'none';
+
+      if (!mainAccountId) {
+        alertBox.textContent = 'Please select a paying source account';
+        alertBox.style.display = 'block';
+        return;
+      }
+
+      if (isNaN(totalBaht) || totalBaht <= 0) {
+        alertBox.textContent = 'Total amount must be greater than 0';
+        alertBox.style.display = 'block';
+        return;
+      }
+
+      const totalMinor = Math.round(totalBaht * 100);
+
+      const rows = document.querySelectorAll('#paymentAllocationsContainer .payment-alloc-row');
+      const allocations = [];
+
+      for (const r of rows) {
+        const targetAccountId = r.querySelector('.payment-alloc-target').value;
+        const lineBaht = parseFloat(r.querySelector('.payment-alloc-amount').value);
+        const memo = r.querySelector('.payment-alloc-memo').value;
+
+        if (!targetAccountId) {
+          alertBox.textContent = 'All allocation lines must specify a target expense or debt account';
+          alertBox.style.display = 'block';
+          return;
+        }
+
+        if (isNaN(lineBaht) || lineBaht <= 0) {
+          alertBox.textContent = 'All allocation amounts must be positive';
+          alertBox.style.display = 'block';
+          return;
+        }
+
+        allocations.push({
+          targetAccountId,
+          amountMinor: Math.round(lineBaht * 100),
+          memo: memo || undefined
+        });
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Recording...';
+
+      try {
+        const res = await fetch('/api/transactions/payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            mainAccountId,
+            totalMinor,
+            transactionDate,
+            description: description || undefined,
+            allocations
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.error?.message || 'Failed to record payment (status ' + res.status + ')');
+        }
+
+        successBox.textContent = 'Payment recorded successfully!';
+        successBox.style.display = 'block';
+
+        setTimeout(() => {
+          closePaymentModal();
+          fetchAccounts();
+        }, 800);
+      } catch (err) {
+        alertBox.textContent = err.message;
+        alertBox.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Record Payment';
       }
     }
 
