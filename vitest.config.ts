@@ -2,7 +2,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    fileParallelism: false
+    fileParallelism: false,
+    poolOptions: {
+      forks: {
+        singleFork: true
+      }
+    }
   }
 });
-

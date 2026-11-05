@@ -136,6 +136,30 @@ export const overviewHtml = `<!DOCTYPE html>
     .card-amount.cash { color: #059669; }
     .card-amount.debt { color: #dc2626; }
     .card-amount.receivable { color: #2563eb; }
+    .card-income { border-left-color: #10b981; }
+    .card-expense { border-left-color: #ef4444; }
+    .card-net { border-left-color: #6366f1; }
+    .card-amount.income { color: #059669; }
+    .card-amount.expense { color: #dc2626; }
+    .card-amount.net { color: #4f46e5; }
+    .badge-opening { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .badge-receipt { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-payment { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .filter-date-input {
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      outline: none;
+    }
+    .filter-date-input:focus { border-color: #2563eb; }
+    .btn-outline-secondary {
+      background-color: transparent;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+    .btn-outline-secondary:hover { background-color: #f1f5f9; }
+    .history-row:hover { background-color: #f8fafc; }
 
     /* Account Section */
     .section-title {
@@ -446,6 +470,92 @@ export const overviewHtml = `<!DOCTYPE html>
       <!-- Receivable Accounts -->
       <h2 class="section-title">Loans Given (Owed to You)</h2>
       <div id="receivableList" class="accounts-list"></div>
+
+      <!-- Period Summary Widget (F-07, FR-22, BR-05) -->
+      <div class="summary-section" style="margin-top: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <div>
+            <h2 class="section-title" style="margin: 0;">Income &amp; Expense Period Summary</h2>
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.15rem;">Calculates actual income vs expenses (transfers, borrowings, repayments &amp; opening balances strictly excluded per BR-05)</p>
+          </div>
+          <div class="date-filter-group" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input type="date" id="summaryFromDate" class="filter-date-input" title="From Date" />
+            <span style="color: #64748b; font-size: 0.85rem;">to</span>
+            <input type="date" id="summaryToDate" class="filter-date-input" title="To Date" />
+            <button class="btn-sm" id="btnFilterSummary" onclick="applySummaryDateFilter()">Filter</button>
+            <button class="btn-sm btn-outline-secondary" id="btnClearSummary" onclick="clearSummaryDateFilter()">All Time</button>
+          </div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="card card-income">
+            <div class="card-title">Total Income</div>
+            <div id="summaryIncome" class="card-amount income">฿0.00</div>
+          </div>
+          <div class="card card-expense">
+            <div class="card-title">Total Expenses</div>
+            <div id="summaryExpense" class="card-amount expense">฿0.00</div>
+          </div>
+          <div class="card card-net">
+            <div class="card-title">Net Savings</div>
+            <div id="summaryNet" class="card-amount net">฿0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transaction History Section (F-07, FR-21, BR-10, NFR-10) -->
+      <div class="history-section" style="margin-top: 2rem; margin-bottom: 3rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <div>
+            <h2 class="section-title" style="margin: 0;">Transaction History</h2>
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.15rem;">Paginated transactions ordered newest first with expandable allocation breakdown</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="historyPageSize" style="font-size: 0.8rem; color: #475569; font-weight: 500;">Per page:</label>
+            <select id="historyPageSize" onchange="changeHistoryPageSize(this.value)" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: 4px; border: 1px solid #cbd5e1;">
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- History Loading & Empty States -->
+        <div id="historyLoading" style="display: none; text-align: center; padding: 1.5rem; background: #fff; border-radius: 6px; border: 1px solid #e2e8f0;">
+          <div class="spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
+          <p style="font-size: 0.85rem; color: #64748b;">Loading transaction history...</p>
+        </div>
+
+        <div id="historyEmpty" style="display: none; text-align: center; padding: 2rem; background: #fff; border-radius: 6px; border: 1px solid #e2e8f0; color: #64748b; font-size: 0.9rem;">
+          No transactions recorded yet. Use the buttons above to record an opening balance, receipt, or payment.
+        </div>
+
+        <div id="historyTableContainer" style="display: none; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; overflow-x: auto;">
+          <table class="history-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600;">
+                <th style="padding: 0.75rem 1rem; width: 40px;"></th>
+                <th style="padding: 0.75rem 1rem;">Date</th>
+                <th style="padding: 0.75rem 1rem;">Type</th>
+                <th style="padding: 0.75rem 1rem;">Main Account</th>
+                <th style="padding: 0.75rem 1rem;">Description</th>
+                <th style="padding: 0.75rem 1rem; text-align: right;">Total Amount</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+
+          <!-- Pagination Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-top: 1px solid #e2e8f0; background: #f8fafc; font-size: 0.85rem; color: #64748b;">
+            <div id="historyPaginationInfo">Showing 0 of 0 transactions</div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button id="btnPrevHistoryPage" class="btn-sm" onclick="navigateHistoryPage(-1)" disabled>&laquo; Previous</button>
+              <span id="historyPageIndicator" style="font-weight: 500; color: #1e293b;">Page 1 of 1</span>
+              <button id="btnNextHistoryPage" class="btn-sm" onclick="navigateHistoryPage(1)" disabled>Next &raquo;</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -739,6 +849,7 @@ export const overviewHtml = `<!DOCTYPE html>
         globalAccounts = data.accounts || [];
         await checkCurrentUser();
         renderOverview(data);
+        await Promise.all([fetchSummary(), fetchHistory()]);
 
         loading.style.display = 'none';
         content.style.display = 'block';
@@ -795,6 +906,214 @@ export const overviewHtml = `<!DOCTYPE html>
           receivableList.appendChild(item);
         }
       });
+    }
+
+    /* Period Summary Widget Logic (F-07, FR-22, BR-05) */
+    let currentSummaryFrom = '';
+    let currentSummaryTo = '';
+
+    async function fetchSummary() {
+      try {
+        let url = '/api/summary/income-expense';
+        const params = new URLSearchParams();
+        if (currentSummaryFrom) params.append('fromDate', currentSummaryFrom);
+        if (currentSummaryTo) params.append('toDate', currentSummaryTo);
+        const qs = params.toString();
+        if (qs) url += '?' + qs;
+
+        const res = await fetch(url, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const incomeEl = document.getElementById('summaryIncome');
+        const expenseEl = document.getElementById('summaryExpense');
+        const netEl = document.getElementById('summaryNet');
+
+        if (incomeEl) incomeEl.textContent = data.incomeFormatted;
+        if (expenseEl) expenseEl.textContent = data.expenseFormatted;
+        if (netEl) {
+          netEl.textContent = data.netFormatted;
+          if (data.netMinor < 0) {
+            netEl.className = 'card-amount expense';
+          } else {
+            netEl.className = 'card-amount net';
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch period summary', err);
+      }
+    }
+
+    function applySummaryDateFilter() {
+      currentSummaryFrom = document.getElementById('summaryFromDate').value;
+      currentSummaryTo = document.getElementById('summaryToDate').value;
+      fetchSummary();
+    }
+
+    function clearSummaryDateFilter() {
+      const fromInput = document.getElementById('summaryFromDate');
+      const toInput = document.getElementById('summaryToDate');
+      if (fromInput) fromInput.value = '';
+      if (toInput) toInput.value = '';
+      currentSummaryFrom = '';
+      currentSummaryTo = '';
+      fetchSummary();
+    }
+
+    /* Transaction History Table Logic (F-07, FR-21, BR-10, NFR-10) */
+    let currentHistoryPage = 1;
+    let currentHistoryPageSize = 20;
+
+    async function fetchHistory(page = currentHistoryPage) {
+      currentHistoryPage = page;
+      const loading = document.getElementById('historyLoading');
+      const empty = document.getElementById('historyEmpty');
+      const tableContainer = document.getElementById('historyTableContainer');
+      const tbody = document.getElementById('historyTableBody');
+      const paginationInfo = document.getElementById('historyPaginationInfo');
+      const pageIndicator = document.getElementById('historyPageIndicator');
+      const btnPrev = document.getElementById('btnPrevHistoryPage');
+      const btnNext = document.getElementById('btnNextHistoryPage');
+
+      if (loading) loading.style.display = 'block';
+      if (empty) empty.style.display = 'none';
+
+      try {
+        const res = await fetch(\`/api/transactions?page=\${currentHistoryPage}&pageSize=\${currentHistoryPageSize}\`, {
+          credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Failed to fetch transactions');
+        const data = await res.json();
+        const { transactions, pagination } = data;
+
+        if (loading) loading.style.display = 'none';
+
+        if (!transactions || transactions.length === 0) {
+          if (pagination.totalCount === 0) {
+            if (empty) empty.style.display = 'block';
+            if (tableContainer) tableContainer.style.display = 'none';
+            return;
+          }
+        }
+
+        if (tableContainer) tableContainer.style.display = 'block';
+        if (tbody) tbody.innerHTML = '';
+
+        transactions.forEach((tx) => {
+          const tr = document.createElement('tr');
+          tr.className = 'history-row';
+          tr.style.borderBottom = '1px solid #f1f5f9';
+          tr.id = \`tx-row-\${tx.id}\`;
+
+          let kindBadgeClass = 'badge-opening';
+          let kindLabel = 'Opening Balance';
+          let amountColor = '#1e293b';
+
+          if (tx.kind === 'RECEIPT') {
+            kindBadgeClass = 'badge-receipt';
+            kindLabel = 'Receipt';
+            amountColor = '#059669';
+          } else if (tx.kind === 'PAYMENT') {
+            kindBadgeClass = 'badge-payment';
+            kindLabel = 'Payment';
+            amountColor = '#dc2626';
+          }
+
+          const hasAllocations = tx.allocations && tx.allocations.length > 0;
+          const toggleIcon = hasAllocations ? '&#9656;' : '&bull;';
+          const cursorStyle = hasAllocations ? 'cursor: pointer;' : '';
+
+          tr.innerHTML = \`
+            <td style="padding: 0.75rem 1rem; text-align: center; \${cursorStyle}" onclick="\${hasAllocations ? \`toggleAllocations('\${tx.id}')\` : ''}">
+              <span id="toggle-icon-\${tx.id}" style="color: #64748b; font-size: 0.9rem; font-weight: bold;">\${toggleIcon}</span>
+            </td>
+            <td style="padding: 0.75rem 1rem; font-weight: 500; color: #1e293b;">\${tx.transactionDate}</td>
+            <td style="padding: 0.75rem 1rem;">
+              <span class="badge-status \${kindBadgeClass}">\${kindLabel}</span>
+            </td>
+            <td style="padding: 0.75rem 1rem; color: #334155; font-weight: 500;">\${tx.mainAccountName}</td>
+            <td style="padding: 0.75rem 1rem; color: #64748b;">\${tx.description || '-'}</td>
+            <td style="padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: \${amountColor};">
+              \${tx.totalFormatted}
+            </td>
+          \`;
+
+          if (tbody) tbody.appendChild(tr);
+
+          if (hasAllocations && tbody) {
+            const subTr = document.createElement('tr');
+            subTr.id = \`alloc-row-\${tx.id}\`;
+            subTr.style.display = 'none';
+            subTr.style.backgroundColor = '#f8fafc';
+
+            let allocHtml = \`
+              <td colspan="6" style="padding: 0.75rem 1.5rem; border-bottom: 1px solid #e2e8f0;">
+                <div style="font-size: 0.8rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                  Allocation Breakdown (\${tx.allocations.length} line\${tx.allocations.length > 1 ? 's' : ''}):
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+            \`;
+
+            tx.allocations.forEach((line) => {
+              allocHtml += \`
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.85rem;">
+                  <div>
+                    <span style="font-weight: 600; color: #1e293b;">\${line.targetAccountName}</span>
+                    <span style="font-size: 0.75rem; color: #64748b; margin-left: 0.35rem;">(\${line.targetAccountType})</span>
+                    \${line.memo ? \`<span style="color: #64748b; font-style: italic; margin-left: 0.5rem;">— \${line.memo}</span>\` : ''}
+                  </div>
+                  <div style="font-weight: 600; color: #0f172a;">\${line.amountFormatted}</div>
+                </div>
+              \`;
+            });
+
+            allocHtml += \`
+                </div>
+              </td>
+            \`;
+            subTr.innerHTML = allocHtml;
+            tbody.appendChild(subTr);
+          }
+        });
+
+        if (paginationInfo) {
+          const fromItem = pagination.totalCount > 0 ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
+          const toItem = Math.min(pagination.totalCount, pagination.page * pagination.pageSize);
+          paginationInfo.textContent = pagination.totalCount > 0
+            ? \`Showing \${fromItem}–\${toItem} of \${pagination.totalCount} transactions\`
+            : 'No transactions';
+        }
+
+        const maxPages = Math.max(1, pagination.totalPages);
+        if (pageIndicator) pageIndicator.textContent = \`Page \${pagination.page} of \${maxPages}\`;
+        if (btnPrev) btnPrev.disabled = pagination.page <= 1;
+        if (btnNext) btnNext.disabled = pagination.page >= maxPages;
+
+      } catch (err) {
+        if (loading) loading.style.display = 'none';
+        console.error('Failed to load transaction history', err);
+      }
+    }
+
+    function toggleAllocations(txId) {
+      const row = document.getElementById(\`alloc-row-\${txId}\`);
+      const icon = document.getElementById(\`toggle-icon-\${txId}\`);
+      if (!row) return;
+      if (row.style.display === 'none') {
+        row.style.display = 'table-row';
+        if (icon) icon.innerHTML = '&#9662;';
+      } else {
+        row.style.display = 'none';
+        if (icon) icon.innerHTML = '&#9656;';
+      }
+    }
+
+    function navigateHistoryPage(delta) {
+      fetchHistory(currentHistoryPage + delta);
+    }
+
+    function changeHistoryPageSize(newSize) {
+      currentHistoryPageSize = parseInt(newSize, 10) || 20;
+      fetchHistory(1);
     }
 
     /* Modal & Positive Satang Validation Logic */

@@ -26,6 +26,47 @@ summaryRouter.get(
       const userId = req.user!.id;
       const { fromDate, toDate } = req.query;
 
+      // Validate date formats if provided (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      let fromStr: string | undefined;
+      let toStr: string | undefined;
+
+      if (fromDate !== undefined && fromDate !== null && String(fromDate).trim() !== '') {
+        fromStr = String(fromDate).trim();
+        if (!dateRegex.test(fromStr) || isNaN(Date.parse(fromStr))) {
+          res.status(400).json({
+            error: {
+              code: 'INVALID_DATE',
+              message: 'fromDate must be a valid date in YYYY-MM-DD format'
+            }
+          });
+          return;
+        }
+      }
+
+      if (toDate !== undefined && toDate !== null && String(toDate).trim() !== '') {
+        toStr = String(toDate).trim();
+        if (!dateRegex.test(toStr) || isNaN(Date.parse(toStr))) {
+          res.status(400).json({
+            error: {
+              code: 'INVALID_DATE',
+              message: 'toDate must be a valid date in YYYY-MM-DD format'
+            }
+          });
+          return;
+        }
+      }
+
+      if (fromStr && toStr && fromStr > toStr) {
+        res.status(400).json({
+          error: {
+            code: 'INVALID_DATE_RANGE',
+            message: 'fromDate cannot be after toDate'
+          }
+        });
+        return;
+      }
+
       const transactions = await prisma.transaction.findMany({
         where: { userId },
         include: {
@@ -60,8 +101,8 @@ summaryRouter.get(
 
       const summary = calculateIncomeExpenseSummary(
         recordedTransactions,
-        typeof fromDate === 'string' ? fromDate : undefined,
-        typeof toDate === 'string' ? toDate : undefined
+        fromStr,
+        toStr
       );
 
       res.status(200).json({
