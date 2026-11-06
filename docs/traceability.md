@@ -83,13 +83,13 @@ This matrix maps every functional requirement (FR), business rule (BR), non-func
 | NFR-04 | Max transaction amount cap 1,000,000,000 satang | API boundary test | Passed (SR-01) |
 | NFR-05 | 8-hour absolute session expiration | Unit test on session expiry calculation | Passed (F-01) |
 | NFR-06 | Clean architecture with decoupled ledger engine | Code review & isolation verification | Passed (SR-01) |
-| NFR-07 | Database transactions on multi-line inserts | Concurrency / transactional rollback test | Passed (F-05, F-06) |
+| NFR-07 | Data persistence survives restart & atomic rollback | Storage durability test (TEST-SR02-05, TEST-NFR07-01) + atomic rollback | Passed (SR-02, F-05, F-06) |
 | NFR-08 | Generic error messages without leaking stack traces | API error handling test | Passed (SR-02) |
 | NFR-09 | Immediate derived balance consistency | Unit tests on balance derivation | Passed (SR-01) |
-| NFR-10 | Responsive UI with loading, empty, and error states | Visual and UI behavior tests (360px+) | Passed (F-02, F-03, F-05, F-06) |
+| NFR-10 | Responsive UI with loading, empty, and error states | Visual and UI behavior tests (360px+) | Passed (F-02, F-03, F-04, F-05, F-06, F-07) |
 | NFR-11 | < 500ms p95 on 5k transactions | Benchmark script | Planned (Sprint 3) |
-| NFR-12 | 100% test pass before merging; > 80% coverage | CI pipeline enforcement | Passed (Sprint 1) |
-| NFR-13 | Comprehensive input validation on all payloads | API negative validation tests | Passed (F-01, F-02, F-03, F-05, F-06) |
+| NFR-12 | 100% test pass before merging; > 80% coverage | CI pipeline enforcement (96 tests pass, 87.19% coverage) | Passed (Sprint 1) |
+| NFR-13 | Comprehensive input validation on all payloads | API negative validation tests | Passed (F-01, F-02, F-03, F-04, F-05, F-06, F-07) |
 
 ---
 
@@ -109,3 +109,4 @@ This matrix maps every functional requirement (FR), business rule (BR), non-func
 | 2026-11-04 | F-05 receive money transactions verified | Issue #9 implemented; FR-13, BR-01, BR-03, BR-04, BR-09, BR-11, NFR-07 passing | Team |
 | 2026-11-04 | F-06 payment/charge transactions verified | Issue #10 implemented; FR-14, FR-15, BR-07, BR-08, BR-09, BR-11, BR-19 passing | Team |
 | 2026-11-05 | F-07 history and period summary verified | Issue #11 implemented; FR-21, FR-22, BR-05, BR-10 passing with pagination & period summary widget | Team |
+| 2026-11-05 | Sprint 1 Integration & Release v0.1.0-sprint1 verified | Issue #12 completed; 96 tests passing (100%), 87.19% statement coverage, NFR-07 data durability verified across restart | Team |
