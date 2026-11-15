@@ -25,9 +25,20 @@ export const adminUsersHtml = `<!DOCTYPE html>
       margin-bottom: 1.5rem;
       border-bottom: 1px solid #e2e8f0;
       padding-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
     h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
     p.subtitle { color: #64748b; font-size: 0.875rem; margin-top: 0.25rem; }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
     #alertBox {
       display: none;
       padding: 0.75rem 1rem;
@@ -84,14 +95,28 @@ export const adminUsersHtml = `<!DOCTYPE html>
     button.btn-disable:hover { background-color: #dc2626; }
     button.btn-enable { background-color: #10b981; color: #ffffff; }
     button.btn-enable:hover { background-color: #059669; }
+    button.btn-logout {
+      background-color: #ffffff;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+    button.btn-logout:hover {
+      background-color: #fee2e2;
+    }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>Admin Dashboard</h1>
-      <p class="subtitle">Platform User Management & Access Control</p>
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p class="subtitle">Platform User Management & Access Control</p>
+      </div>
+      <div class="header-actions">
+        <div id="adminUserInfo" class="badge badge-admin" style="display: none; padding: 0.4rem 0.75rem; font-size: 0.8125rem;"></div>
+        <button id="btnAdminLogout" class="btn btn-logout" onclick="handleAdminLogout()">Log Out</button>
+      </div>
     </header>
 
     <div id="alertBox"></div>
@@ -115,11 +140,52 @@ export const adminUsersHtml = `<!DOCTYPE html>
   </div>
 
   <script>
+    async function handleAdminLogout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      } catch (e) {}
+      window.location.href = '/overview';
+    }
+
+    async function checkAdminAuth() {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (!res.ok) {
+          if (res.status === 401) {
+            window.location.href = '/overview';
+            return null;
+          }
+        }
+        const data = await res.json();
+        const user = data.user || data;
+        if (user.role !== 'ADMINISTRATOR') {
+          const alertBox = document.getElementById('alertBox');
+          alertBox.className = 'error';
+          alertBox.innerHTML = '<strong>Access Denied:</strong> Administrator privileges required. <div style="margin-top: 0.5rem;"><a href="/overview" style="color: #991b1b; font-weight: 600; text-decoration: underline; margin-right: 1rem;">Go to Account Overview</a><button class="btn btn-logout" onclick="handleAdminLogout()">Log Out</button></div>';
+          alertBox.style.display = 'block';
+          document.getElementById('usersTable').style.display = 'none';
+          return null;
+        }
+        const badge = document.getElementById('adminUserInfo');
+        if (badge) {
+          badge.textContent = (user.displayName || user.email) + ' (' + user.role + ')';
+          badge.style.display = 'inline-block';
+        }
+        return user;
+      } catch (e) {
+        return null;
+      }
+    }
+
     async function loadUsers() {
       const alertBox = document.getElementById('alertBox');
       const tbody = document.getElementById('userRows');
+
+      const admin = await checkAdminAuth();
+      if (!admin) return;
+
       try {
-        const res = await fetch('/api/admin/users');
+        const res = await fetch('/api/admin/users', { credentials: 'include' });
         if (!res.ok) {
           throw new Error('Failed to load users (' + res.status + ')');
         }

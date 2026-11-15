@@ -224,11 +224,14 @@ describe('F-02: Administrator User Management & Access Control', () => {
     expect(res.body.error.code).toBe('FORBIDDEN');
   });
 
-  it('TEST-F02-09: GET /admin/users serves HTML dashboard UI', async () => {
+  it('TEST-F02-09: GET /admin/users serves HTML dashboard UI with identity and logout controls', async () => {
     const res = await request(app).get('/admin/users');
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/html');
     expect(res.text).toContain('Admin Dashboard');
     expect(res.text).toContain('Users');
+    expect(res.text).toContain('adminUserInfo');
+    expect(res.text).toContain('btnAdminLogout');
+    expect(res.text).toContain('handleAdminLogout');
   });
 });
