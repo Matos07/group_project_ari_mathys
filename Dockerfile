@@ -17,7 +17,6 @@ RUN npx prisma generate
 
 COPY src ./src/
 RUN npm run build
-RUN npm prune --production
 
 # ==============================================================================
 # Stage 2: Production Runtime Image (Minimal Alpine image serving on $PORT)
@@ -30,6 +29,7 @@ RUN apk add --no-cache openssl tzdata
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src ./src
 COPY --from=builder /app/prisma ./prisma
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh

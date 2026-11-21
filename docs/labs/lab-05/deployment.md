@@ -103,3 +103,21 @@ Routine releases are managed through GitHub Actions:
      gcloud run services describe moneylogger --region=asia-southeast1 --format='value(spec.template.spec.containers[0].image)'
      ```
    * **Via Application Smoke Test:** The smoke test validates the live URL and records the deployed digest in GitHub Actions workflow summary.
+
+---
+
+## 6. Deployment Scripts & Offline Verification (R-07, R-08)
+
+The `deploy/` directory provides standardized, idempotent automation scripts:
+
+* `deploy/deploy.sh`: Initial GCP infrastructure provisioning (Cloud SQL, Secret Manager, Cloud Run service & migration job). Safe to re-run; supports `--demo` and `DRY_RUN=1`.
+* `deploy/release.sh`: Executed by GitHub Actions CD pipeline to update Cloud Run to the new immutable digest and run database migrations.
+* `deploy/smoke_test.py`: Standalone Python script verifying public health probes (`/api/health`, `/api/ready`), HTML views, and optional authenticated session lifecycle.
+* `deploy/teardown.sh`: Destroys provisioned GCP resources to immediately stop billing after lab completion.
+
+### Offline Testing Suite (`deploy/tests/`)
+All scripts are verified offline in the CI pipeline without requiring live GCP access or incurring cloud costs:
+* `bash deploy/tests/test_deploy_stub.sh`: Verifies idempotency, credential secrecy, enterprise edition flags, and failure gating.
+* `bash deploy/tests/test_release_stub.sh`: Tests normal release, rollback mode, and abort on failed migrations.
+* `python3 -m unittest discover -s deploy/tests -p 'test_smoke.py'`: Validates smoke test assertions and session cleanup.
+
