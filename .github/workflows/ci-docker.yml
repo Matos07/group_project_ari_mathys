@@ -87,7 +87,7 @@ jobs:
           python3 -m unittest discover -s deploy/tests -p 'test_smoke.py'
 
       # ------------------------------------------------------------------------
-      # 4. Install, test & build application
+      # 4. Install, migrate, test & build application
       # ------------------------------------------------------------------------
       - name: Install & Test Application
         env:
@@ -97,6 +97,8 @@ jobs:
         run: |
           npm ci
           npx prisma generate
+          npx prisma migrate deploy
+          npm run seed
           npm test
           npm run build
 
