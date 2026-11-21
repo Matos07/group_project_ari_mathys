@@ -438,7 +438,10 @@ export const overviewHtml = `<!DOCTYPE html>
     <!-- Error State -->
     <div id="errorState" class="error-state" style="display: none;">
       <p id="errorMessage">Failed to load account overview.</p>
-      <button class="btn-retry" onclick="fetchAccounts()">Retry</button>
+      <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem;">
+        <button class="btn-retry" onclick="fetchAccounts()">Retry</button>
+        <button type="button" class="btn-outline-danger" style="display: inline-block; padding: 0.5rem 1rem;" onclick="handleLogout()">Log Out</button>
+      </div>
     </div>
 
     <!-- Main Content State -->
@@ -760,16 +763,22 @@ export const overviewHtml = `<!DOCTYPE html>
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' });
         if (res.ok) {
-          const user = await res.json();
+          const data = await res.json();
+          const user = data.user || data;
           const badge = document.getElementById('userInfo');
-          badge.textContent = user.displayName + ' (' + user.role + ')';
+          badge.textContent = (user.displayName || user.email) + ' (' + user.role + ')';
           badge.style.display = 'inline-block';
           document.getElementById('btnLogout').style.display = 'inline-block';
+          if (user.role === 'ADMINISTRATOR') {
+            return user;
+          }
           document.getElementById('openModalBtn').style.display = 'inline-flex';
           document.getElementById('receiveMoneyBtn').style.display = 'inline-flex';
           document.getElementById('makePaymentBtn').style.display = 'inline-flex';
+          return user;
         }
       } catch (e) {}
+      return null;
     }
 
     async function handleLogin(e) {
@@ -796,6 +805,14 @@ export const overviewHtml = `<!DOCTYPE html>
           throw new Error(err.error?.message || 'Login failed');
         }
 
+        const data = await res.json();
+        const user = data.user || data;
+
+        if (user && user.role === 'ADMINISTRATOR') {
+          window.location.href = '/admin/users';
+          return;
+        }
+
         document.getElementById('loginState').style.display = 'none';
         await checkCurrentUser();
         fetchAccounts();
@@ -818,6 +835,8 @@ export const overviewHtml = `<!DOCTYPE html>
       document.getElementById('receiveMoneyBtn').style.display = 'none';
       document.getElementById('makePaymentBtn').style.display = 'none';
       document.getElementById('contentState').style.display = 'none';
+      document.getElementById('errorState').style.display = 'none';
+      document.getElementById('loadingState').style.display = 'none';
       document.getElementById('loginState').style.display = 'block';
     }
 
@@ -833,6 +852,13 @@ export const overviewHtml = `<!DOCTYPE html>
       content.style.display = 'none';
       loginState.style.display = 'none';
 
+      // 1. Identify user first
+      const currentUser = await checkCurrentUser();
+      if (currentUser && currentUser.role === 'ADMINISTRATOR') {
+        window.location.href = '/admin/users';
+        return;
+      }
+
       try {
         const res = await fetch('/api/accounts', { credentials: 'include' });
         if (!res.ok) {
@@ -841,13 +867,18 @@ export const overviewHtml = `<!DOCTYPE html>
             loginState.style.display = 'block';
             return;
           }
+          if (res.status === 403) {
+            loading.style.display = 'none';
+            errorBox.style.display = 'block';
+            errorMsg.innerHTML = '<strong>Access Restricted:</strong> Administrator accounts do not hold financial ledgers.<div style="margin-top: 1rem;"><a href="/admin/users" class="btn-primary" style="display: inline-block; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px;">Go to Admin Dashboard</a></div>';
+            return;
+          }
           const errData = await res.json().catch(() => ({}));
           throw new Error(errData.error?.message || 'Server returned status ' + res.status);
         }
 
         const data = await res.json();
         globalAccounts = data.accounts || [];
-        await checkCurrentUser();
         renderOverview(data);
         await Promise.all([fetchSummary(), fetchHistory()]);
 
