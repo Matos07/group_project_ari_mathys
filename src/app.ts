@@ -1,6 +1,7 @@
 import express, { Express } from 'express';
 import cookieParser from 'cookie-parser';
 import { config } from './config/env.js';
+import { prisma } from './db/client.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './routes/auth.js';
@@ -17,9 +18,19 @@ export function createApp(configureRoutes?: (app: Express) => void): Express {
   app.use(express.json());
   app.use(cookieParser(config.sessionSecret));
 
-  // Health check endpoint
+  // Health check endpoint (liveness check)
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
+  });
+
+  // Readiness check endpoint (verifies database connectivity per Lab 5 contract)
+  app.get('/api/ready', async (_req, res) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      res.status(200).json({ status: 'ready', db: 'connected' });
+    } catch {
+      res.status(503).json({ status: 'error', db: 'disconnected' });
+    }
   });
 
   // Redirect root and /login to overview
