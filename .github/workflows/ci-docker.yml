@@ -1,0 +1,110 @@
+# ##############################################################################
+# CI — "CI & Docker Build"
+# ##############################################################################
+# WHAT THIS WORKFLOW DOES
+#   Runs the project's checks and is used in two ways:
+#     1) directly on every pull request to main, lab5-staging, sprint1-staging,
+#     2) as a REUSABLE workflow called by deploy.yml (workflow_call).
+#   Steps: offline deploy-script tests -> unit/integration tests -> production build
+#          -> verify the production Dockerfile builds.
+#   It does NOT deploy anything.
+#
+# ⚠️ DO NOT RENAME:
+#   - job id : test-and-docker
+# ##############################################################################
+
+name: CI & Docker Build
+
+# ------------------------------------------------------------------------------
+# Triggers
+# ------------------------------------------------------------------------------
+on:
+  workflow_call:
+  pull_request:
+    branches: [main, lab5-staging, sprint1-staging]
+  workflow_dispatch:
+
+# Least privilege: this workflow only needs to read the repository.
+permissions:
+  contents: read
+
+# A newer run on the same ref cancels the older one.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ⚠️ Job id must stay `test-and-docker`.
+  test-and-docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: moneylogger
+          POSTGRES_PASSWORD: moneylogger
+          POSTGRES_DB: moneylogger
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      # ------------------------------------------------------------------------
+      # 1. Get the source code
+      # ------------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # ------------------------------------------------------------------------
+      # 2. Language runtimes
+      # ------------------------------------------------------------------------
+      - name: Setup Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      # ------------------------------------------------------------------------
+      # 3. Deploy scripts: syntax check + offline tests (NO access to GCP)
+      # ------------------------------------------------------------------------
+      - name: Check deployment scripts without accessing GCP
+        run: |
+          bash -n deploy/deploy.sh deploy/teardown.sh deploy/release.sh
+          bash deploy/tests/test_deploy_stub.sh
+          bash deploy/tests/test_release_stub.sh
+          python3 -m unittest discover -s deploy/tests -p 'test_smoke.py'
+
+      # ------------------------------------------------------------------------
+      # 4. Install, migrate, test & build application
+      # ------------------------------------------------------------------------
+      - name: Install & Test Application
+        env:
+          DATABASE_URL: file:./dev.db
+          SESSION_SECRET: test-session-secret-at-least-32-chars-long-abcdef
+          SEED_PASSWORD: TestSeedPassword123!
+        run: |
+          npm ci
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run seed
+          npm test
+          npm run build
+
+      # ------------------------------------------------------------------------
+      # 5. Make sure the production image still builds
+      # ------------------------------------------------------------------------
+      - name: Verify Unified Production Dockerfile Build
+        run: |
+          docker build -t moneylogger:test .

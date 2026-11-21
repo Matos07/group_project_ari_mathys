@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: moneylogger-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: moneylogger
+      POSTGRES_PASSWORD: moneylogger_secret
+      POSTGRES_DB: moneylogger
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moneylogger -d moneylogger"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: moneylogger-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://moneylogger:moneylogger_secret@postgres:5432/moneylogger?schema=public
+      SESSION_SECRET: dev-secret-key-change-in-prod
+      SEED_PASSWORD: ChangeMeInLocalTesting123!
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
