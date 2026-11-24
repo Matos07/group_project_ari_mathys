@@ -21,3 +21,10 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Python cache & temp files
+__pycache__/
+*.pyc
+
+# Patch files
+*.patch
+
