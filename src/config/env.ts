@@ -7,6 +7,6 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   databaseUrl: process.env.DATABASE_URL || 'file:./dev.db',
   sessionSecret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-prod',
-  seedPassword: process.env.SEED_PASSWORD || ''
+  seedPassword: process.env.SEED_PASSWORD || process.env.ADMIN_PASSWORD || ''
 };
 
