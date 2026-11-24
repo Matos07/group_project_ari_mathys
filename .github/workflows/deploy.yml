@@ -78,8 +78,8 @@ jobs:
       # ⚠️ Variable names GCP_PROJECT_ID / GCP_REGION must not change.
       PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
       REGION: ${{ vars.GCP_REGION }}
-      SERVICE_NAME: moneylogger
-      MIGRATE_JOB_NAME: moneylogger-migrate
+      SERVICE_NAME: sc3de6abc
+      MIGRATE_JOB_NAME: sc3de6abc-migrate
       IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
       ROLLBACK: ${{ inputs.image_tag != '' }}
     steps:
@@ -119,7 +119,7 @@ jobs:
         if: env.ROLLBACK != 'true'
         run: |
           gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
-          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/moneylogger/moneylogger:$IMAGE_TAG"
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/sc3de6abc/sc3de6abc:$IMAGE_TAG"
           docker build --tag "$IMAGE" .
           docker push "$IMAGE"
 
