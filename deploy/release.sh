@@ -13,8 +13,8 @@ set -euo pipefail
 # 1. Read and validate inputs (fail before any GCP call)
 # ------------------------------------------------------------------------------
 : "${PROJECT_ID:?Required}" "${REGION:?Required}" "${IMAGE_TAG:?Required}"
-SERVICE_NAME="${SERVICE_NAME:-moneylogger}"
-MIGRATE_JOB_NAME="${MIGRATE_JOB_NAME:-moneylogger-migrate}"
+SERVICE_NAME="${SERVICE_NAME:-sc3de6abc}"
+MIGRATE_JOB_NAME="${MIGRATE_JOB_NAME:-sc3de6abc-migrate}"
 ROLLBACK="${ROLLBACK:-false}"
 [[ "$IMAGE_TAG" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid image tag.' >&2; exit 1; }
 [[ "$ROLLBACK" == true || "$ROLLBACK" == false ]] || { echo 'Invalid rollback mode.' >&2; exit 1; }
@@ -22,9 +22,9 @@ ROLLBACK="${ROLLBACK:-false}"
 # ------------------------------------------------------------------------------
 # 2. Find the image and pin it by digest
 # ------------------------------------------------------------------------------
-IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/moneylogger/moneylogger:$IMAGE_TAG"
+IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/sc3de6abc/sc3de6abc:$IMAGE_TAG"
 DIGEST_IMAGE="$(gcloud artifacts docker images describe "$IMAGE" --project="$PROJECT_ID" --format='value(image_summary.fully_qualified_digest)')"
-[[ "$DIGEST_IMAGE" == "$REGION-docker.pkg.dev/$PROJECT_ID/moneylogger/moneylogger@sha256:"* ]] || { echo 'Image digest not found.' >&2; exit 1; }
+[[ "$DIGEST_IMAGE" == "$REGION-docker.pkg.dev/$PROJECT_ID/sc3de6abc/sc3de6abc@sha256:"* ]] || { echo 'Image digest not found.' >&2; exit 1; }
 
 # ------------------------------------------------------------------------------
 # 3. Database migration (normal release only; `--wait` blocks until it finishes)
