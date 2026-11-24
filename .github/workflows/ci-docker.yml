@@ -91,7 +91,7 @@ jobs:
       # ------------------------------------------------------------------------
       - name: Install & Test Application
         env:
-          DATABASE_URL: file:./dev.db
+          DATABASE_URL: postgresql://moneylogger:moneylogger@localhost:5432/moneylogger?schema=public
           SESSION_SECRET: test-session-secret-at-least-32-chars-long-abcdef
           SEED_PASSWORD: TestSeedPassword123!
         run: |
