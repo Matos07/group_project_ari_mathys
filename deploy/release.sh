@@ -30,13 +30,21 @@ DIGEST_IMAGE="$(gcloud artifacts docker images describe "$IMAGE" --project="$PRO
 # 3. Database migration (normal release only; `--wait` blocks until it finishes)
 # ------------------------------------------------------------------------------
 if [[ "$ROLLBACK" == false ]]; then
-  gcloud run jobs update "$MIGRATE_JOB_NAME" \
-    --image="$DIGEST_IMAGE" \
-    --set-secrets="DATABASE_URL=sc3de6abc-database-url:latest,ADMIN_PASSWORD=sc3de6abc-admin-password:latest,SEED_PASSWORD=sc3de6abc-admin-password:latest" \
-    --command="sh" \
-    --args="-c,npx prisma migrate deploy && npm run seed" \
+  UPDATE_ARGS=(
+    --image="$DIGEST_IMAGE"
+    --set-secrets="DATABASE_URL=sc3de6abc-database-url:latest,ADMIN_PASSWORD=sc3de6abc-admin-password:latest,SEED_PASSWORD=sc3de6abc-admin-password:latest"
+    --command="sh"
+    --args="-c,npx prisma migrate deploy && npm run seed"
     --project="$PROJECT_ID" --region="$REGION" --quiet
+  )
+  if [[ -n "${SMOKE_EMAIL:-}" && -n "${SMOKE_PASSWORD:-}" ]]; then
+    UPDATE_ARGS+=(--set-env-vars="SMOKE_EMAIL=${SMOKE_EMAIL},SMOKE_PASSWORD=${SMOKE_PASSWORD}")
+  fi
+  gcloud run jobs update "$MIGRATE_JOB_NAME" "${UPDATE_ARGS[@]}"
   gcloud run jobs execute "$MIGRATE_JOB_NAME" --wait --project="$PROJECT_ID" --region="$REGION" --quiet
+  if [[ -n "${SMOKE_EMAIL:-}" && -n "${SMOKE_PASSWORD:-}" ]]; then
+    gcloud run jobs update "$MIGRATE_JOB_NAME" --remove-env-vars="SMOKE_EMAIL,SMOKE_PASSWORD" --project="$PROJECT_ID" --region="$REGION" --quiet || true
+  fi
 else
   echo 'Rollback: reuse existing image; skip tests, build, migration and seed.'
 fi
