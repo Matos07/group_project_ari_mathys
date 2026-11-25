@@ -28,9 +28,13 @@ import urllib.error
 import urllib.request
 
 
+_last_cookie = None
+
+
 # --- HTTP helper --------------------------------------------------------------
 # Returns the response body (bytes). Raises on HTTP errors / timeouts.
 def request(base, path, data=None, token=None):
+    global _last_cookie
     headers = {}
     if data is not None:
         headers['Content-Type'] = 'application/json'
@@ -43,6 +47,11 @@ def request(base, path, data=None, token=None):
     req = urllib.request.Request(base + path, headers=headers,
         data=json.dumps(data).encode() if data is not None else None)
     with urllib.request.urlopen(req, timeout=30) as response:
+        cookies = response.headers.get_all('Set-Cookie') or []
+        for c in cookies:
+            part = c.split(';', 1)[0].strip()
+            if part.startswith('sid='):
+                _last_cookie = part
         return response.read()
 
 
@@ -77,7 +86,7 @@ def check(base):
     try:
         login_res = request(base, '/api/auth/login', {'email': email, 'password': password})
         login = json.loads(login_res)
-        token = login.get('token', 'session-cookie')
+        token = login.get('token') or _last_cookie or 'session-cookie'
         request(base, '/api/auth/me', token=token)
         print('PASS login and authenticated /api/auth/me')
     except (urllib.error.URLError, TimeoutError, ValueError, KeyError):

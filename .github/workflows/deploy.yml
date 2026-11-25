@@ -127,13 +127,10 @@ jobs:
       # 5. Verify image -> run migration job -> update the Cloud Run service
       # ------------------------------------------------------------------------
       - name: Verify image, migrate and deploy
+        env:
+          SMOKE_EMAIL: ${{ vars.SMOKE_EMAIL }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
         run: bash deploy/release.sh
-
-      - name: Inspect migration job and service env bindings (names only)
-        run: |
-          gcloud run jobs describe "$MIGRATE_JOB_NAME" --project="$PROJECT_ID" --region="$REGION" --format="yaml(template.template.containers[0].env)" || true
-          gcloud run services describe "$SERVICE_NAME" --project="$PROJECT_ID" --region="$REGION" --format="yaml(spec.template.spec.containers[0].env)" || true
-          gcloud logging read "resource.type=cloud_run_job AND resource.labels.job_name=$MIGRATE_JOB_NAME" --project="$PROJECT_ID" --limit=20 --format="value(textPayload)" || true
 
       # ------------------------------------------------------------------------
       # 6. Smoke test the live URL

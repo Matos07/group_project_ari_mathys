@@ -100,6 +100,59 @@ export async function seedDatabase(client: PrismaClient, seedPassword?: string):
       });
     }
   }
+
+  // 4. Optional smoke/operator accounts when SMOKE_EMAIL and SMOKE_PASSWORD are provided
+  const smokeEmail = process.env.SMOKE_EMAIL?.toLowerCase().trim();
+  const smokePassword = process.env.SMOKE_PASSWORD?.trim();
+  if (smokeEmail && smokePassword) {
+    const smokeHash = await bcrypt.hash(smokePassword, 12);
+    const smokeUser = await client.user.upsert({
+      where: { email: smokeEmail },
+      update: {
+        passwordHash: smokeHash,
+        displayName: 'Ari User',
+        role: 'USER',
+        isActive: true
+      },
+      create: {
+        email: smokeEmail,
+        passwordHash: smokeHash,
+        displayName: 'Ari User',
+        role: 'USER',
+        isActive: true
+      }
+    });
+
+    for (const acc of DEFAULT_ACCOUNTS) {
+      await client.account.upsert({
+        where: {
+          userId_name: {
+            userId: smokeUser.id,
+            name: acc.name
+          }
+        },
+        update: { type: acc.type, subtype: acc.subtype, isActive: true },
+        create: { userId: smokeUser.id, name: acc.name, type: acc.type, subtype: acc.subtype, isActive: true }
+      });
+    }
+
+    await client.user.upsert({
+      where: { email: 'ari.admin@example.test' },
+      update: {
+        passwordHash: smokeHash,
+        displayName: 'Ari Admin',
+        role: 'ADMINISTRATOR',
+        isActive: true
+      },
+      create: {
+        email: 'ari.admin@example.test',
+        passwordHash: smokeHash,
+        displayName: 'Ari Admin',
+        role: 'ADMINISTRATOR',
+        isActive: true
+      }
+    });
+  }
 }
 
 // Auto-run if executed directly as a script
