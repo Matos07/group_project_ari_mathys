@@ -32,6 +32,7 @@ DIGEST_IMAGE="$(gcloud artifacts docker images describe "$IMAGE" --project="$PRO
 if [[ "$ROLLBACK" == false ]]; then
   gcloud run jobs update "$MIGRATE_JOB_NAME" \
     --image="$DIGEST_IMAGE" \
+    --set-secrets="DATABASE_URL=sc3de6abc-database-url:latest,ADMIN_PASSWORD=sc3de6abc-admin-password:latest,SEED_PASSWORD=sc3de6abc-admin-password:latest" \
     --command="sh" \
     --args="-c,npx prisma migrate deploy && npm run seed" \
     --project="$PROJECT_ID" --region="$REGION" --quiet
