@@ -27,7 +27,8 @@ export function createApp(configureRoutes?: (app: Express) => void): Express {
   app.get('/api/ready', async (_req, res) => {
     try {
       await prisma.$queryRaw`SELECT 1`;
-      res.status(200).json({ status: 'ready', db: 'connected' });
+      const userCount = await prisma.user.count();
+      res.status(200).json({ status: 'ready', db: 'connected', userCount });
     } catch {
       res.status(503).json({ status: 'error', db: 'disconnected' });
     }

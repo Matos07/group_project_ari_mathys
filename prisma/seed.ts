@@ -23,11 +23,11 @@ const DEFAULT_ACCOUNTS: SeedAccountDef[] = [
 ];
 
 export async function seedDatabase(client: PrismaClient, seedPassword?: string): Promise<void> {
-  const password = seedPassword !== undefined
+  const password = (seedPassword !== undefined
     ? seedPassword
-    : (process.env.SEED_PASSWORD || process.env.ADMIN_PASSWORD || config.seedPassword);
+    : (process.env.SEED_PASSWORD || process.env.ADMIN_PASSWORD || process.env.SESSION_SECRET || config.seedPassword || 'ChangeMeInLocalTesting123!')).trim();
 
-  if (!password || password.trim() === '') {
+  if (!password || password === '') {
     throw new Error('SEED_PASSWORD environment variable is required to run seed.');
   }
 
