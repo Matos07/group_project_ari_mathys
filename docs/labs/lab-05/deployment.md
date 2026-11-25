@@ -8,10 +8,10 @@ This document describes the deployment architecture, configuration parameters, l
 
 The cloud architecture uses Google Cloud Platform (GCP) serverless and managed database infrastructure:
 
-* **Compute:** Google Cloud Run (fully managed container execution, scales to zero when idle, min instances 0, max instances 3).
-* **Database:** Google Cloud SQL for PostgreSQL 16 (`db-f1-micro`, 10 GB SSD, storage auto-increase disabled for cost control).
-* **Container Registry:** Google Artifact Registry (`moneylogger` repository in `asia-southeast1`).
-* **Secrets Management:** Google Secret Manager (stores `DATABASE_URL`, `SESSION_SECRET`, and `SEED_PASSWORD`).
+* **Compute:** Google Cloud Run (`sc3de6abc` service, fully managed container execution, scales to zero when idle, min instances 0, max instances 1).
+* **Database:** Google Cloud SQL for PostgreSQL 16 (`sc3de6abc-pg`, `db-f1-micro`).
+* **Container Registry:** Google Artifact Registry (`sc3de6abc` repository in `asia-southeast1`).
+* **Secrets Management:** Google Secret Manager (stores `sc3de6abc-database-url`, `sc3de6abc-admin-password`, and `sc3de6abc-demo-password`).
 * **Continuous Integration & Delivery:** GitHub Actions with keyless Workload Identity Federation (WIF).
 * **Runtime User:** Unprivileged `node` user inside minimal `node:24-alpine` container.
 
@@ -79,14 +79,14 @@ docker compose down
 
 | Resource Type | Resource Name | GCP Region | Specification |
 |---|---|---|---|
-| GCP Project | `YOUR_PROJECT_ID` | `asia-southeast1` | Free Trial account |
-| Artifact Registry | `moneylogger` | `asia-southeast1` | Docker repository |
-| Cloud SQL Instance | `moneylogger-pg` | `asia-southeast1` | PostgreSQL 16, `db-f1-micro`, Enterprise Edition |
-| Cloud SQL Database | `moneylogger` | `asia-southeast1` | UTF-8 default database |
-| Cloud Run Service | `moneylogger` | `asia-southeast1` | Port 3000, 1 vCPU, 512 MiB RAM, 0-3 instances |
-| Cloud Run Migrate Job | `moneylogger-migrate` | `asia-southeast1` | Runs `npx prisma migrate deploy && npm run seed` |
-| Service Account (Runtime) | `moneylogger-runner` | Global | Secret Manager Secret Accessor, Cloud SQL Client |
-| Service Account (Deployer) | `moneylogger-deployer` | Global | Cloud Run Developer, Artifact Registry Writer |
+| GCP Project | `cpe-se-course-2026` | `asia-southeast1` | Shared course project (Number `670075229477`) |
+| Artifact Registry | `sc3de6abc` | `asia-southeast1` | Docker repository |
+| Cloud SQL Instance | `sc3de6abc-pg` | `asia-southeast1` | PostgreSQL 16, `db-f1-micro` |
+| Cloud SQL Database | `sc3de6abc` | `asia-southeast1` | UTF-8 default database |
+| Cloud Run Service | `sc3de6abc` | `asia-southeast1` | Port 3000, 1 vCPU, 512 MiB RAM, URL `https://sc3de6abc-4d7hbszvwq-as.a.run.app` |
+| Cloud Run Migrate Job | `sc3de6abc-migrate` | `asia-southeast1` | Runs `npx prisma migrate deploy && npm run seed` |
+| Service Account (Runtime) | `sc3de6abc-runner@cpe-se-course-2026.iam.gserviceaccount.com` | Global | Secret Manager Secret Accessor, Cloud SQL Client |
+| Service Account (Deployer) | `sc3de6abc-deployer@cpe-se-course-2026.iam.gserviceaccount.com` | Global | WIF GitHub Actions deployer |
 
 ---
 
@@ -97,12 +97,12 @@ Routine releases are managed through GitHub Actions:
 2. The pipeline builds the container image tagged with the **full 40-character Git commit SHA** (`$GITHUB_SHA`).
 3. The image is deployed to Cloud Run using its immutable digest (`@sha256:...`).
 4. To identify the currently running commit on production:
-   * **Via GCP Console:** Navigate to Cloud Run > `moneylogger` > Revisions > View the container image tag or digest.
+   * **Via GCP Console:** Navigate to Cloud Run > `sc3de6abc` > Revisions > View the container image tag or digest.
    * **Via CLI:**
      ```bash
-     gcloud run services describe moneylogger --region=asia-southeast1 --format='value(spec.template.spec.containers[0].image)'
+     gcloud run services describe sc3de6abc --project=cpe-se-course-2026 --region=asia-southeast1 --format='value(spec.template.spec.containers[0].image)'
      ```
-   * **Via Application Smoke Test:** The smoke test validates the live URL and records the deployed digest in GitHub Actions workflow summary.
+   * **Via Application Smoke Test:** The smoke test validates the live URL (`https://sc3de6abc-4d7hbszvwq-as.a.run.app`) and records the deployed digest in GitHub Actions workflow summary.
 
 ---
 
